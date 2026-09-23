@@ -22,6 +22,11 @@ def test_mrr_uses_reciprocal_of_first_hit_position():
     assert mrr_at_k(rankings, gold, k=2) == pytest.approx((0.5 + 1.0 + 0.0) / 3)
 
 
+def test_mrr_rejects_mismatched_lengths():
+    with pytest.raises(ValueError):
+        mrr_at_k([[1]], [1, 2], k=1)
+
+
 def test_mrr_ignores_hits_beyond_k():
     assert mrr_at_k([[9, 9, 1]], [1], k=2) == pytest.approx(0.0)
 

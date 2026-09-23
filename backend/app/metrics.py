@@ -32,7 +32,20 @@ def recall_at_k(
 
 
 def mrr_at_k(rankings: Sequence[Sequence[int]], gold: Sequence[int], k: int) -> float:
-    """Mean Reciprocal Rank, tính trong top-k; query không có hit đóng góp 0."""
+    """Mean Reciprocal Rank across all queries, ranked within top-k.
+
+    Each query contributes 1/position of its first hit (or 0 if no hit within top-k).
+    Queries with no hit contribute 0 to the sum but are included in the denominator
+    (total number of queries), so MRR reflects performance across the entire query set.
+    Excluding misses would let a system with few but perfect hits appear artificially
+    strong; fixed denominator penalizes incomplete recall.
+
+    :param rankings: list of ranked item sequences, one per query.
+    :param gold: list of ground-truth items, one per query.
+    :param k: cutoff rank; only consider top-k items from rankings.
+    :return: mean reciprocal rank (float in [0, 1]).
+    :raises ValueError: if len(rankings) != len(gold).
+    """
     _check_lengths(rankings, gold)
     total = 0.0
     for ranked, want in zip(rankings, gold):
@@ -48,10 +61,18 @@ def precision_at_k(
     query_labels: Sequence[set[str]],
     k: int,
 ) -> float:
-    """P@k cho ảnh→ảnh: một kết quả tính là liên quan nếu chia sẻ ≥1 nhãn với query.
+    """Precision@k for image-to-image search using label overlap as relevance proxy.
 
-    Đây là proxy, không phải ground-truth thật; nó thiên vị ảnh nhiều object.
-    Query không có nhãn nào đóng góp 0.
+    A result is considered relevant if it shares at least one label with the query.
+    This is a proxy heuristic, not ground truth; it biases toward images with many
+    objects. Queries with no labels contribute 0; rank lists shorter than k are
+    handled gracefully by not contributing to that query's precision.
+
+    :param ranked_labels: list of label sets for ranked results, one list per query.
+    :param query_labels: list of label sets for queries, one set per query.
+    :param k: cutoff rank; only consider top-k results for precision calculation.
+    :return: mean precision@k across all queries (float in [0, 1]).
+    :raises ValueError: if len(ranked_labels) != len(query_labels).
     """
     _check_lengths(ranked_labels, query_labels)
     total = 0.0
@@ -69,12 +90,18 @@ def map_at_k(
     query_labels: Sequence[set[str]],
     k: int,
 ) -> float:
-    """mAP@k với độ liên quan = có chia sẻ nhãn.
+    """Mean Average Precision@k using label overlap as relevance proxy.
 
-    AP@k ở đây chuẩn hoá theo **số item liên quan tìm được trong top-k**, không
-    theo tổng số item liên quan trong corpus (con số đó vô nghĩa với proxy
-    nhãn, vì hàng nghìn ảnh cùng chứa 'person'). Định nghĩa này phải được ghi
-    đúng như vậy trong báo cáo.
+    A result is relevant if it shares at least one label with the query.
+    Average Precision@k is normalized by the count of relevant items found
+    in top-k (not by corpus size), since corpus-wide relevance counts are
+    meaningless for label proxies where thousands of images share 'person'.
+
+    :param ranked_labels: list of label sets for ranked results, one list per query.
+    :param query_labels: list of label sets for queries, one set per query.
+    :param k: cutoff rank; compute AP over top-k results.
+    :return: mean average precision@k across all queries (float in [0, 1]).
+    :raises ValueError: if len(ranked_labels) != len(query_labels).
     """
     _check_lengths(ranked_labels, query_labels)
     total = 0.0
@@ -93,9 +120,17 @@ def map_at_k(
 def overlap_at_k(
     rankings_a: Sequence[Sequence[int]], rankings_b: Sequence[Sequence[int]], k: int
 ) -> float:
-    """Tỉ lệ trùng nhau giữa hai top-k, bình quân trên các query.
+    """Overlap ratio between two top-k rankings, averaged across queries.
 
-    Dùng cho trục ANN vs exact: ``rankings_b`` là kết quả exact làm chuẩn vàng.
+    Measures agreement between ranking systems (e.g., ANN approximation vs.
+    exact search). Overlap is the size of intersection divided by the maximum
+    of the two set sizes (Tanimoto-like similarity).
+
+    :param rankings_a: first set of ranked item sequences, one per query.
+    :param rankings_b: second set of ranked item sequences, one per query (often ground truth).
+    :param k: cutoff rank; only consider top-k items from each ranking.
+    :return: mean overlap ratio across all queries (float in [0, 1]).
+    :raises ValueError: if len(rankings_a) != len(rankings_b).
     """
     _check_lengths(rankings_a, rankings_b)
     total = 0.0
