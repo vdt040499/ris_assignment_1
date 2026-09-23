@@ -44,6 +44,22 @@ class HFDualEncoder:
         self._model = AutoModel.from_pretrained(self._space.hf_id).to(self._device).eval()
         self._processor = AutoProcessor.from_pretrained(self._space.hf_id)
 
+    @staticmethod
+    def _as_embedding_tensor(output: Any) -> Any:
+        """Chuẩn hoá đầu ra của ``get_text_features``/``get_image_features``.
+
+        Trên ``transformers`` bản mới (đã xác nhận với 5.14.1), hai hàm này
+        được decorator ``@can_return_tuple`` bọc lại và trả về một
+        ``BaseModelOutputWithPooling`` (embedding đã project nằm ở
+        ``.pooler_output``) thay vì trả thẳng tensor như các bản cũ hơn mà
+        phần code gốc giả định. Hàm này chấp nhận cả hai dạng để không phụ
+        thuộc chặt vào một phiên bản ``transformers`` cụ thể.
+
+        :param output: giá trị trả về thô từ ``get_text_features``/``get_image_features``.
+        :returns: tensor embedding.
+        """
+        return output.pooler_output if hasattr(output, "pooler_output") else output
+
     def _finalize(self, vectors: np.ndarray) -> np.ndarray:
         """Kiểm tra dim rồi normalize nếu space yêu cầu.
 
@@ -80,7 +96,7 @@ class HFDualEncoder:
                 return_tensors="pt",
             ).to(self._device)
             with torch.no_grad():
-                features = self._model.get_text_features(**inputs)
+                features = self._as_embedding_tensor(self._model.get_text_features(**inputs))
             chunks.append(features.cpu().numpy())
         return self._finalize(np.concatenate(chunks, axis=0))
 
@@ -100,6 +116,6 @@ class HFDualEncoder:
             batch = list(images[start : start + self._batch_size])
             inputs = self._processor(images=batch, return_tensors="pt").to(self._device)
             with torch.no_grad():
-                features = self._model.get_image_features(**inputs)
+                features = self._as_embedding_tensor(self._model.get_image_features(**inputs))
             chunks.append(features.cpu().numpy())
         return self._finalize(np.concatenate(chunks, axis=0))
