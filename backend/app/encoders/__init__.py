@@ -46,6 +46,14 @@ def get_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
     :param space_name: tên space trong registry.
     :param settings: cấu hình dùng để dựng cache lần đầu (kích thước cache,
         device, batch_size); mặc định dùng ``get_settings()``.
+
+    Lấy ``_cache`` vào biến cục bộ **bên trong** lock rồi mới gọi ``.get()``
+    bên ngoài lock. Nếu đọc lại global ``_cache`` sau khi đã nhả lock, một
+    lệnh gọi ``reset_encoder_cache()`` xen giữa có thể set nó về ``None``,
+    khiến ``.get()`` ném ``AttributeError`` — bind vào biến cục bộ đóng kín
+    khoảng hở đó. Việc load model đồng thời cho cùng một key vẫn được
+    ``LruEncoderCache.get()`` tự khoá và xử lý, không liên quan gì tới sửa
+    đổi này.
     """
     global _cache
     settings = settings or get_settings()
@@ -55,7 +63,8 @@ def get_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
                 settings.model_cache_size,
                 lambda name: build_encoder(name, settings),
             )
-    return _cache.get(space_name)
+        cache = _cache
+    return cache.get(space_name)
 
 
 def reset_encoder_cache() -> None:
