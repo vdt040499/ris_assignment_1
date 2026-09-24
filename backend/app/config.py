@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     qdrant_mode: Literal["server", "embedded"] = "server"
     qdrant_url: str = "http://localhost:6333"
     qdrant_timeout_s: float = 10.0
+    #: Số kết nối HTTP giữ keep-alive tới Qdrant server. qdrant-client tắt
+    #: keep-alive theo mặc định khi host là localhost/127.0.0.1 (coi đó là tối
+    #: ưu độ trễ), nhưng việc đó khiến mỗi lần gọi .search() mở một kết nối
+    #: TCP mới rồi đóng ngay — chạy hàng chục nghìn query tuần tự (như CLI
+    #: evaluate) dồn ứ cổng ở trạng thái TIME_WAIT và có thể làm cạn cổng
+    #: ephemeral trên Windows (WinError 10048). VectorStore ghi đè bằng
+    #: httpx.Limits dùng giá trị này để giữ và tái sử dụng kết nối.
+    qdrant_pool_size: int = 10
 
     data_dir: Path = Path("data")
     results_dir: Path = Path("results")

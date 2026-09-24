@@ -8,6 +8,7 @@ một file.
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+import httpx
 import numpy as np
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
@@ -69,8 +70,29 @@ class VectorStore:
         if client is not None:
             self._client = client
         elif settings.qdrant_mode == "server":
+            # qdrant-client tự tắt HTTP keep-alive khi host là localhost/127.0.0.1
+            # (xem QdrantRemote.__init__), khiến mỗi lần .search() mở một kết nối
+            # TCP mới. Trên Windows, hàng chục nghìn query tuần tự của CLI evaluate
+            # có thể cạn cổng ephemeral (WinError 10048) vì TIME_WAIT dồn nhanh hơn
+            # tốc độ hệ điều hành thu hồi cổng. Truyền limits tường minh để ghi đè
+            # mặc định đó và tái sử dụng kết nối.
+            #
+            # Đo thực tế trên máy chạy dự án này: gọi qua tên "localhost" tốn
+            # ~100ms/query (kể cả sau khi bật lại keep-alive ở trên), trong khi
+            # cùng request gửi thẳng tới "127.0.0.1" chỉ còn ~50ms — chênh lệch
+            # đến từ cách Windows phân giải "localhost" cho từng kết nối, không
+            # liên quan gì tới Qdrant hay tới thuật toán tìm kiếm (exact và ANN
+            # đo được thời gian như nhau, loại trừ khả năng do compute). Thay
+            # "localhost" bằng "127.0.0.1" chỉ ở URL thực sự dùng để kết nối —
+            # settings.qdrant_url (hiển thị trong thông báo lỗi, v.v.) giữ nguyên.
+            connect_url = settings.qdrant_url.replace("localhost", "127.0.0.1")
             self._client = QdrantClient(
-                url=settings.qdrant_url, timeout=settings.qdrant_timeout_s
+                url=connect_url,
+                timeout=settings.qdrant_timeout_s,
+                limits=httpx.Limits(
+                    max_connections=settings.qdrant_pool_size,
+                    max_keepalive_connections=settings.qdrant_pool_size,
+                ),
             )
         else:
             settings.qdrant_path.mkdir(parents=True, exist_ok=True)
