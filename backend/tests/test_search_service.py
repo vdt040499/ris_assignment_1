@@ -1,11 +1,5 @@
-import numpy as np
 import pytest
-from PIL import Image
-from qdrant_client import QdrantClient
 
-from app.config import Settings
-from app.corpus import caption_payload, caption_point_id, load_corpus, record_payload
-from app.encoders.bm25 import Bm25Retriever
 from app.errors import (
     BadRequestError,
     IndexNotBuiltError,
@@ -14,80 +8,6 @@ from app.errors import (
     ValidationRangeError,
 )
 from app.schemas import Filters, TextSearchRequest
-from app.search import SearchService
-from app.vectordb import VectorStore
-from cli.ingest import build_corpus
-
-DIM = 4
-TEXT_KEYWORDS = {"dog": 0, "puppy": 0, "couch": 0, "sofa": 0, "zebra": 1, "pizza": 2}
-SIZE_TO_INDEX = {(80, 60): 0, (60, 90): 1, (40, 40): 2}
-
-
-class FakeEncoder:
-    """Encoder tất định 4 chiều: đủ để kiểm tra điều phối mà không tải model."""
-
-    name = "fake"
-    dim = DIM
-
-    def __init__(self):
-        self.seen_texts: list[str] = []
-
-    def encode_texts(self, texts):
-        self.seen_texts.extend(texts)
-        basis = np.eye(DIM, dtype=np.float32)
-        return np.stack([
-            basis[next((i for kw, i in TEXT_KEYWORDS.items() if kw in t.lower()), 3)]
-            for t in texts
-        ])
-
-    def encode_images(self, images):
-        basis = np.eye(DIM, dtype=np.float32)
-        return np.stack([basis[SIZE_TO_INDEX.get(img.size, 3)] for img in images])
-
-
-@pytest.fixture
-def encoder():
-    return FakeEncoder()
-
-
-@pytest.fixture
-def settings(tmp_path):
-    return Settings(_env_file=None, data_dir=tmp_path, qdrant_mode="embedded",
-                    top_k_default=2, max_top_k=5)
-
-
-@pytest.fixture
-def corpus(mini_annotations_dir, settings):
-    build_corpus(mini_annotations_dir, settings.corpus_path)
-    return load_corpus(settings.corpus_path)
-
-
-@pytest.fixture
-def service(settings, corpus, encoder, mini_images_dir):
-    store = VectorStore(settings, client=QdrantClient(location=":memory:"))
-    images = [
-        Image.open(mini_images_dir / r.file_name).convert("RGB") for r in corpus.records
-    ]
-    vectors = encoder.encode_images(images)
-
-    store.ensure_collection("coco_clip_b32", dim=DIM, distance="Cosine")
-    store.upsert("coco_clip_b32", ids=corpus.image_ids(), vectors=vectors,
-                 payloads=[record_payload(r) for r in corpus.records], batch_size=8)
-    store.create_payload_indexes("coco_clip_b32", ["categories", "supercategories"])
-
-    caption_ids, caption_vectors, caption_payloads = [], [], []
-    for record in corpus.records:
-        for idx in range(len(record.captions)):
-            caption_ids.append(caption_point_id(record.image_id, idx))
-            caption_vectors.append(encoder.encode_texts([record.captions[idx]])[0])
-            caption_payloads.append(caption_payload(record, idx))
-    store.ensure_collection("coco_cap_clip_b32", dim=DIM, distance="Cosine")
-    store.upsert("coco_cap_clip_b32", ids=caption_ids,
-                 vectors=np.stack(caption_vectors), payloads=caption_payloads,
-                 batch_size=8)
-
-    Bm25Retriever.build(corpus).save(settings.bm25_path)
-    return SearchService(settings, store, corpus, encoder_factory=lambda name: encoder)
 
 
 def text_request(**kwargs):
