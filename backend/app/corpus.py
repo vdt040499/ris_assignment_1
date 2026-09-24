@@ -76,6 +76,35 @@ def record_payload(record: CorpusRecord) -> dict:
     }
 
 
+CAPTION_ID_STRIDE = 100
+
+
+def caption_point_id(image_id: int, caption_index: int) -> int:
+    """Id point Qdrant cho một caption.
+
+    Trộn image_id với chỉ số caption theo stride cố định, nên id trong
+    collection caption không bao giờ đụng id trong collection ảnh và từ một id
+    caption luôn suy lại được ảnh gốc.
+
+    :raises ValueError: nếu ``caption_index`` >= CAPTION_ID_STRIDE, vì khi đó
+        công thức mất tính đơn ánh.
+    """
+    if not 0 <= caption_index < CAPTION_ID_STRIDE:
+        raise ValueError(
+            f"caption_index {caption_index} ngoài khoảng [0, {CAPTION_ID_STRIDE})"
+        )
+    return image_id * CAPTION_ID_STRIDE + caption_index
+
+
+def caption_payload(record: CorpusRecord, caption_index: int) -> dict:
+    """Payload cho một point caption: metadata của ảnh + chính caption đó."""
+    return {
+        **record_payload(record),
+        "caption_index": caption_index,
+        "caption": record.captions[caption_index],
+    }
+
+
 def write_corpus(records: Iterable[CorpusRecord], path: Path) -> int:
     """Ghi corpus ra JSONL. Trả về số record đã ghi."""
     path.parent.mkdir(parents=True, exist_ok=True)

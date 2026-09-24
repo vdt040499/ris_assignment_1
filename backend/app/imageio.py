@@ -7,6 +7,7 @@ một dạng chuẩn xảy ra ở đây và chỉ ở đây.
 """
 
 import io
+from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
@@ -67,3 +68,15 @@ def load_upload_image(
     if image.mode != "RGB":
         image = image.convert("RGB")
     return downscale(image, settings.max_image_pixels)
+
+
+def load_corpus_image(path: Path, settings: Settings) -> Image.Image:
+    """Nạp một ảnh có sẵn trong corpus, chuẩn hoá giống ảnh upload.
+
+    Dùng cho nút "Tìm ảnh tương tự": người dùng không upload gì, hệ encode lại
+    ảnh đã có trên đĩa. Encode lại cho ra đúng vector đã nằm trong index (model
+    tất định), nên không cần đường đọc vector ra khỏi Qdrant.
+    """
+    with Image.open(path) as image:
+        image = ImageOps.exif_transpose(image).convert("RGB")
+        return downscale(image, settings.max_image_pixels)

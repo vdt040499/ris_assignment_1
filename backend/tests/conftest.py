@@ -22,7 +22,7 @@ def mini_annotations_dir(tmp_path: Path) -> Path:
             {"image_id": 1, "id": 10, "caption": "a dog on a red sofa"},
             {"image_id": 1, "id": 11, "caption": "a brown dog sleeping"},
             {"image_id": 2, "id": 12, "caption": "two zebras in a field"},
-            {"image_id": 3, "id": 13, "caption": "a slice of pizza"},
+            {"image_id": 3, "id": 13, "caption": "a slice of pepperoni pizza"},
         ],
     }
     instances = {
