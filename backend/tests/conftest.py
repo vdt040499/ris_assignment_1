@@ -78,6 +78,11 @@ class FakeEncoder:
 
     def __init__(self):
         self.seen_texts: list[str] = []
+        #: Số lần encode_images được gọi. Không dùng bởi test nào có sẵn — chỉ
+        #: để test_build_index.py xác nhận DERIVED_FROM thật sự tránh encode
+        #: ảnh hai lần, chứ không phải trùng khớp ngẫu nhiên vì encoder giả
+        #: tất định.
+        self.image_encode_calls = 0
 
     def encode_texts(self, texts):
         self.seen_texts.extend(texts)
@@ -88,6 +93,7 @@ class FakeEncoder:
         ])
 
     def encode_images(self, images):
+        self.image_encode_calls += 1
         basis = np.eye(DIM, dtype=np.float32)
         return np.stack([basis[SIZE_TO_INDEX.get(img.size, 3)] for img in images])
 

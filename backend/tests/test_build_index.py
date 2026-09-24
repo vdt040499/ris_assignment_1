@@ -74,20 +74,31 @@ def test_caption_collection_holds_one_point_per_caption(settings, store, corpus,
     assert store.count("coco_cap_clip_b32") == 4
 
 
-def test_image_vectors_are_cached_on_disk(settings, corpus, factory):
+def test_image_vectors_are_cached_on_disk(settings, corpus, factory, encoder):
     first = image_vectors(get_space("clip-b32"), settings, corpus, factory)
     assert (settings.cache_dir / "imgvec_clip-b32.npy").exists()
     np.testing.assert_allclose(
         first, image_vectors(get_space("clip-b32"), settings, corpus, factory)
     )
+    # Chứng minh lần gọi thứ hai là cache hit chứ không phải một lần encode
+    # nữa tình cờ ra cùng kết quả (FakeEncoder tất định nên hai điều đó không
+    # phân biệt được nếu chỉ so sánh giá trị vector).
+    assert encoder.image_encode_calls == 1
 
 
-def test_normalized_space_derives_from_the_raw_cache(settings, corpus, factory):
+def test_normalized_space_derives_from_the_raw_cache(settings, corpus, factory, encoder):
     raw = image_vectors(get_space("clip-b32-raw"), settings, corpus, factory)
     normalized = image_vectors(get_space("clip-b32"), settings, corpus, factory)
     assert raw.shape == normalized.shape
     np.testing.assert_allclose(np.linalg.norm(normalized, axis=1),
                                np.ones(len(normalized)), atol=1e-5)
+    # Đây mới là bằng chứng thực sự của cơ chế DERIVED_FROM: nếu nhánh derive
+    # bị xoá, bị đảo ngược, hoặc BUILD_ORDER bị sắp sai thứ tự, clip-b32 sẽ
+    # rơi xuống nhánh encode thật lần thứ hai thay vì tải lại cache của
+    # clip-b32-raw. FakeEncoder tất định nên hai lần encode vẫn ra cùng một
+    # vector và hai assertion ở trên vẫn pass — chỉ đếm số lần gọi
+    # encode_images mới phát hiện được hồi quy này.
+    assert encoder.image_encode_calls == 1
 
 
 def test_filterable_payload_survives_the_upsert(settings, store, corpus, factory):
