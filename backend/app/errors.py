@@ -35,3 +35,7 @@ class BadRequestError(SearchError):
 
 class CorpusError(SearchError):
     """corpus.jsonl thiếu, rỗng, hoặc sai schema."""
+
+
+class ValidationRangeError(SearchError):
+    """Tham số hợp kiểu nhưng ngoài khoảng cho phép (vd k > MAX_TOP_K) → HTTP 422."""
