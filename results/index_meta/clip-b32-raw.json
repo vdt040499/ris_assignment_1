@@ -1,0 +1,13 @@
+{
+  "space": "clip-b32-raw",
+  "hf_id": "openai/clip-vit-base-patch32",
+  "dim": 512,
+  "distance": "Dot",
+  "normalized": false,
+  "backend": "qdrant",
+  "n_points": 5000,
+  "encode_seconds": 236.62,
+  "batch_size": 32,
+  "built_at": "2026-09-24T07:00:37+00:00",
+  "git_commit": "9d477b5"
+}

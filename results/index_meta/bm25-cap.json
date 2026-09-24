@@ -1,0 +1,13 @@
+{
+  "space": "bm25-cap",
+  "hf_id": null,
+  "dim": null,
+  "distance": null,
+  "normalized": false,
+  "backend": "bm25",
+  "n_points": 5000,
+  "encode_seconds": 0.22,
+  "batch_size": 32,
+  "built_at": "2026-09-24T08:40:31+00:00",
+  "git_commit": "9d477b5"
+}
