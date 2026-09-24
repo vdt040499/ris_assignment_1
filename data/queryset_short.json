@@ -1,0 +1,402 @@
+[
+  {
+    "query": "a airplane",
+    "gold_category": "airplane",
+    "n_gold": 97
+  },
+  {
+    "query": "a apple",
+    "gold_category": "apple",
+    "n_gold": 76
+  },
+  {
+    "query": "a backpack",
+    "gold_category": "backpack",
+    "n_gold": 228
+  },
+  {
+    "query": "a banana",
+    "gold_category": "banana",
+    "n_gold": 103
+  },
+  {
+    "query": "a baseball bat",
+    "gold_category": "baseball bat",
+    "n_gold": 97
+  },
+  {
+    "query": "a baseball glove",
+    "gold_category": "baseball glove",
+    "n_gold": 100
+  },
+  {
+    "query": "a bear",
+    "gold_category": "bear",
+    "n_gold": 49
+  },
+  {
+    "query": "a bed",
+    "gold_category": "bed",
+    "n_gold": 149
+  },
+  {
+    "query": "a bench",
+    "gold_category": "bench",
+    "n_gold": 235
+  },
+  {
+    "query": "a bicycle",
+    "gold_category": "bicycle",
+    "n_gold": 149
+  },
+  {
+    "query": "a bird",
+    "gold_category": "bird",
+    "n_gold": 125
+  },
+  {
+    "query": "a boat",
+    "gold_category": "boat",
+    "n_gold": 121
+  },
+  {
+    "query": "a book",
+    "gold_category": "book",
+    "n_gold": 230
+  },
+  {
+    "query": "a bottle",
+    "gold_category": "bottle",
+    "n_gold": 379
+  },
+  {
+    "query": "a bowl",
+    "gold_category": "bowl",
+    "n_gold": 314
+  },
+  {
+    "query": "a broccoli",
+    "gold_category": "broccoli",
+    "n_gold": 71
+  },
+  {
+    "query": "a bus",
+    "gold_category": "bus",
+    "n_gold": 189
+  },
+  {
+    "query": "a cake",
+    "gold_category": "cake",
+    "n_gold": 124
+  },
+  {
+    "query": "a car",
+    "gold_category": "car",
+    "n_gold": 535
+  },
+  {
+    "query": "a carrot",
+    "gold_category": "carrot",
+    "n_gold": 81
+  },
+  {
+    "query": "a cat",
+    "gold_category": "cat",
+    "n_gold": 184
+  },
+  {
+    "query": "a cell phone",
+    "gold_category": "cell phone",
+    "n_gold": 214
+  },
+  {
+    "query": "a chair",
+    "gold_category": "chair",
+    "n_gold": 580
+  },
+  {
+    "query": "a clock",
+    "gold_category": "clock",
+    "n_gold": 204
+  },
+  {
+    "query": "a couch",
+    "gold_category": "couch",
+    "n_gold": 195
+  },
+  {
+    "query": "a cow",
+    "gold_category": "cow",
+    "n_gold": 87
+  },
+  {
+    "query": "a cup",
+    "gold_category": "cup",
+    "n_gold": 390
+  },
+  {
+    "query": "a dining table",
+    "gold_category": "dining table",
+    "n_gold": 501
+  },
+  {
+    "query": "a dog",
+    "gold_category": "dog",
+    "n_gold": 177
+  },
+  {
+    "query": "a donut",
+    "gold_category": "donut",
+    "n_gold": 62
+  },
+  {
+    "query": "a elephant",
+    "gold_category": "elephant",
+    "n_gold": 89
+  },
+  {
+    "query": "a fire hydrant",
+    "gold_category": "fire hydrant",
+    "n_gold": 86
+  },
+  {
+    "query": "a fork",
+    "gold_category": "fork",
+    "n_gold": 155
+  },
+  {
+    "query": "a frisbee",
+    "gold_category": "frisbee",
+    "n_gold": 84
+  },
+  {
+    "query": "a giraffe",
+    "gold_category": "giraffe",
+    "n_gold": 101
+  },
+  {
+    "query": "a hair drier",
+    "gold_category": "hair drier",
+    "n_gold": 9
+  },
+  {
+    "query": "a handbag",
+    "gold_category": "handbag",
+    "n_gold": 292
+  },
+  {
+    "query": "a horse",
+    "gold_category": "horse",
+    "n_gold": 128
+  },
+  {
+    "query": "a hot dog",
+    "gold_category": "hot dog",
+    "n_gold": 51
+  },
+  {
+    "query": "a keyboard",
+    "gold_category": "keyboard",
+    "n_gold": 106
+  },
+  {
+    "query": "a kite",
+    "gold_category": "kite",
+    "n_gold": 91
+  },
+  {
+    "query": "a knife",
+    "gold_category": "knife",
+    "n_gold": 181
+  },
+  {
+    "query": "a laptop",
+    "gold_category": "laptop",
+    "n_gold": 183
+  },
+  {
+    "query": "a microwave",
+    "gold_category": "microwave",
+    "n_gold": 54
+  },
+  {
+    "query": "a motorcycle",
+    "gold_category": "motorcycle",
+    "n_gold": 159
+  },
+  {
+    "query": "a mouse",
+    "gold_category": "mouse",
+    "n_gold": 88
+  },
+  {
+    "query": "a orange",
+    "gold_category": "orange",
+    "n_gold": 85
+  },
+  {
+    "query": "a oven",
+    "gold_category": "oven",
+    "n_gold": 115
+  },
+  {
+    "query": "a parking meter",
+    "gold_category": "parking meter",
+    "n_gold": 37
+  },
+  {
+    "query": "a person",
+    "gold_category": "person",
+    "n_gold": 2693
+  },
+  {
+    "query": "a pizza",
+    "gold_category": "pizza",
+    "n_gold": 153
+  },
+  {
+    "query": "a potted plant",
+    "gold_category": "potted plant",
+    "n_gold": 172
+  },
+  {
+    "query": "a refrigerator",
+    "gold_category": "refrigerator",
+    "n_gold": 101
+  },
+  {
+    "query": "a remote",
+    "gold_category": "remote",
+    "n_gold": 145
+  },
+  {
+    "query": "a sandwich",
+    "gold_category": "sandwich",
+    "n_gold": 98
+  },
+  {
+    "query": "a scissors",
+    "gold_category": "scissors",
+    "n_gold": 28
+  },
+  {
+    "query": "a sheep",
+    "gold_category": "sheep",
+    "n_gold": 65
+  },
+  {
+    "query": "a sink",
+    "gold_category": "sink",
+    "n_gold": 187
+  },
+  {
+    "query": "a skateboard",
+    "gold_category": "skateboard",
+    "n_gold": 127
+  },
+  {
+    "query": "a skis",
+    "gold_category": "skis",
+    "n_gold": 120
+  },
+  {
+    "query": "a snowboard",
+    "gold_category": "snowboard",
+    "n_gold": 49
+  },
+  {
+    "query": "a spoon",
+    "gold_category": "spoon",
+    "n_gold": 153
+  },
+  {
+    "query": "a sports ball",
+    "gold_category": "sports ball",
+    "n_gold": 169
+  },
+  {
+    "query": "a stop sign",
+    "gold_category": "stop sign",
+    "n_gold": 69
+  },
+  {
+    "query": "a suitcase",
+    "gold_category": "suitcase",
+    "n_gold": 105
+  },
+  {
+    "query": "a surfboard",
+    "gold_category": "surfboard",
+    "n_gold": 149
+  },
+  {
+    "query": "a teddy bear",
+    "gold_category": "teddy bear",
+    "n_gold": 94
+  },
+  {
+    "query": "a tennis racket",
+    "gold_category": "tennis racket",
+    "n_gold": 167
+  },
+  {
+    "query": "a tie",
+    "gold_category": "tie",
+    "n_gold": 145
+  },
+  {
+    "query": "a toaster",
+    "gold_category": "toaster",
+    "n_gold": 8
+  },
+  {
+    "query": "a toilet",
+    "gold_category": "toilet",
+    "n_gold": 149
+  },
+  {
+    "query": "a toothbrush",
+    "gold_category": "toothbrush",
+    "n_gold": 34
+  },
+  {
+    "query": "a traffic light",
+    "gold_category": "traffic light",
+    "n_gold": 191
+  },
+  {
+    "query": "a train",
+    "gold_category": "train",
+    "n_gold": 157
+  },
+  {
+    "query": "a truck",
+    "gold_category": "truck",
+    "n_gold": 250
+  },
+  {
+    "query": "a tv",
+    "gold_category": "tv",
+    "n_gold": 207
+  },
+  {
+    "query": "a umbrella",
+    "gold_category": "umbrella",
+    "n_gold": 174
+  },
+  {
+    "query": "a vase",
+    "gold_category": "vase",
+    "n_gold": 137
+  },
+  {
+    "query": "a wine glass",
+    "gold_category": "wine glass",
+    "n_gold": 110
+  },
+  {
+    "query": "a zebra",
+    "gold_category": "zebra",
+    "n_gold": 85
+  }
+]
