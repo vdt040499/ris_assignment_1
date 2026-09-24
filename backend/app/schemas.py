@@ -17,6 +17,8 @@ class Filters(BaseModel):
 
 
 class TextSearchRequest(BaseModel):
+    """Request body for semantic search: text or image query into embedding space."""
+
     query: str
     space: str
     k: int | None = Field(default=None, ge=1)
@@ -43,6 +45,13 @@ class TextSearchRequest(BaseModel):
 
 
 class SearchResultItem(BaseModel):
+    """One search result, used identically for both text→image and image→image.
+
+    For text→image search (target="image"), matched_caption and caption_index are
+    None — the match is at image level. For image→caption search (target="caption"),
+    these fields identify which specific caption matched.
+    """
+
     image_id: int
     file_name: str
     thumb_url: str
@@ -55,6 +64,8 @@ class SearchResultItem(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    """Response body for search queries, with unified shape for all directions."""
+
     results: list[SearchResultItem]
     latency_ms: float
     encode_ms: float
@@ -66,6 +77,8 @@ class SearchResponse(BaseModel):
 
 
 class SpaceInfo(BaseModel):
+    """Metadata about an embedding space."""
+
     name: str
     hf_id: str | None
     dim: int | None
@@ -78,6 +91,8 @@ class SpaceInfo(BaseModel):
 
 
 class HealthResponse(BaseModel):
+    """Server health status and space readiness."""
+
     status: str
     qdrant: str
     qdrant_mode: str
@@ -86,6 +101,8 @@ class HealthResponse(BaseModel):
 
 
 class ExampleQuery(BaseModel):
+    """Example query for API documentation and frontend UI."""
+
     label: str
     query: str
     space: str

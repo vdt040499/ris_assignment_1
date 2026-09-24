@@ -19,6 +19,10 @@ def downscale(image: Image.Image, max_pixels: int) -> Image.Image:
 
     Trả về chính ảnh đầu vào nếu nó đã đủ nhỏ. Cạnh nhỏ nhất luôn còn ít nhất
     1 pixel, nên ảnh cực dẹt (vd 1000×2) không bị co thành rỗng.
+
+    :param image: PIL Image object to potentially downscale.
+    :param max_pixels: Maximum total pixel count allowed (width × height).
+    :return: Image, either original if under budget or downscaled version.
     """
     width, height = image.size
     if width * height <= max_pixels:
@@ -33,10 +37,14 @@ def load_upload_image(
 ) -> Image.Image:
     """Biến bytes upload thành ảnh RGB đã xoay đúng và đủ nhỏ để encode.
 
+    :param data: Raw image bytes to decode and normalize.
     :param content_type: MIME type do client khai; ``None`` thì bỏ qua và chỉ
         dựa vào việc bytes có giải mã được hay không.
+    :param settings: Configuration object containing upload limits and allowed types.
+    :return: PIL Image in RGB mode, correctly oriented, and downscaled as needed.
     :raises ImageTooLargeError: vượt ``MAX_UPLOAD_MB`` (kiểm tra trước khi giải
-        mã, để một file rác 500MB không bị nạp vào RAM).
+        mã, để một file rác 500MB không bị nạp vào RAM). Also guards against
+        decompression bombs (small files with huge declared dimensions).
     :raises BadImageError: content type không cho phép, hoặc bytes không phải ảnh.
     """
     if len(data) > settings.max_upload_bytes:
@@ -52,7 +60,7 @@ def load_upload_image(
     try:
         image = Image.open(io.BytesIO(data))
         image.load()
-    except (UnidentifiedImageError, OSError, ValueError) as exc:
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
         raise BadImageError(f"Không giải mã được ảnh: {exc}") from exc
 
     image = ImageOps.exif_transpose(image)

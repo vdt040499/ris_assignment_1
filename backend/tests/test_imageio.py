@@ -69,3 +69,13 @@ def test_upload_above_the_byte_limit_is_rejected(settings):
 def test_missing_content_type_is_allowed_if_bytes_decode(settings):
     data = encode(Image.new("RGB", (10, 10)))
     assert load_upload_image(data, None, settings).size == (10, 10)
+
+
+def test_decompression_bomb_shaped_image_is_rejected_cleanly(settings, monkeypatch):
+    """Small image with declared dimensions above MAX_IMAGE_PIXELS → BadImageError."""
+    from PIL import Image as PILImage
+
+    monkeypatch.setattr(PILImage, "MAX_IMAGE_PIXELS", 100)
+    data = encode(PILImage.new("RGB", (50, 50)))  # 2500 px > lowered 100px threshold
+    with pytest.raises(BadImageError):
+        load_upload_image(data, "image/png", settings)
