@@ -10,6 +10,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
 
+# Windows mặc định stdout/stderr theo codepage hệ thống (thường cp1252) khi output
+# bị pipe/redirect, làm print() tiếng Việt crash với UnicodeEncodeError. Ép UTF-8
+# ngay từ đầu để mọi subcommand (kể cả cli.ingest/build_index/evaluate gọi qua đây)
+# in được tiếng Việt an toàn, dù chạy tương tác hay bị redirect vào file/CI.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        pass
+
 
 def cmd_ingest(rest: list[str]) -> int:
     from cli.ingest import main
