@@ -105,7 +105,16 @@ def encoder():
 
 @pytest.fixture
 def settings(tmp_path):
-    return Settings(_env_file=None, data_dir=tmp_path, qdrant_mode="embedded",
+    """Settings cô lập trong tmp_path cho mọi test.
+
+    ``results_dir`` là field thô (``Path("results")``), không phải
+    ``@property`` suy từ ``data_dir`` như các đường dẫn khác trong
+    ``Settings`` — nên phải chỉ định tường minh ở đây. Bỏ sót nó khiến mọi
+    test ghi qua ``settings.results_dir`` (ví dụ ``write_table``) ghi thẳng
+    vào thư mục ``results/`` thật của dự án, đè lên kết quả eval thật.
+    """
+    return Settings(_env_file=None, data_dir=tmp_path,
+                    results_dir=tmp_path / "results", qdrant_mode="embedded",
                     top_k_default=2, max_top_k=5)
 
 

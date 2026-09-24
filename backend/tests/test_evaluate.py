@@ -94,9 +94,34 @@ def test_image2image_uses_the_category_proxy(ctx):
     assert 0.0 <= row["mAP@2"] <= 1.0
 
 
-def test_image2image_excludes_the_query_image(ctx):
+def test_image2image_reports_self_as_its_own_nearest_neighbor(ctx):
+    """self_hits đếm trên ranking THÔ (trước lọc self), nên phụ thuộc dữ liệu
+    thật chứ không phải một hằng số theo cấu trúc code.
+
+    FakeEncoder mã hoá ảnh 1 (80x60) thành vector one-hot chỉ số 0, khác hẳn
+    ảnh 2 và 3 — nên khi lấy chính vector ảnh 1 làm query, ảnh 1 luôn là láng
+    giềng gần nhất tuyệt đối (cosine=1.0) của chính nó trong ranking thô, và
+    self_hits phải bằng đúng 1 (không phải 0 mặc định).
+    """
     row = eval_image2image(ctx, "clip-b32", image_ids=[1], k=2)
-    assert row["self_hits"] == 0
+    assert row["self_hits"] == 1
+
+
+def test_image2image_excludes_the_query_image_from_scoring(ctx):
+    """Kiểm exclusion bằng hiệu ứng thật của nó lên P@k, không phải bằng
+    self_hits (self_hits đếm trên ranking thô — xem test phía trên — nên
+    không thể chứng minh bước lọc ``others`` có chạy hay không: một self_hits
+    đếm trên chính ``others`` đã lọc luôn ra 0 bất kể code loại trừ có đúng
+    hay không).
+
+    Corpus mini gán ảnh 1 categories ``{"couch", "dog"}``, không trùng ảnh 2
+    (``{"zebra"}``) hay ảnh 3 (rỗng). Nếu bước loại trừ ảnh query khỏi
+    ``others`` bị gỡ bỏ (hoặc hỏng), ảnh 1 sẽ tự khớp category với chính nó
+    (trùng 100%) và lọt vào ``others`` — kéo P@2 lên trên 0. P@2 == 0.0 do đó
+    chỉ đúng khi việc loại trừ thật sự hoạt động.
+    """
+    row = eval_image2image(ctx, "clip-b32", image_ids=[1], k=2)
+    assert row["P@2"] == pytest.approx(0.0)
 
 
 def test_short_queries_are_scored_by_category_hit(ctx, settings):

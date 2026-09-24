@@ -156,8 +156,16 @@ def eval_image2image(
 ) -> dict:
     """P@k và mAP@k cho chiều ảnh→ảnh, dùng proxy trùng category.
 
-    Ảnh query bị loại khỏi kết quả của chính nó; ``self_hits`` báo cáo số lần
-    việc loại đó thất bại, để người đọc tin được con số P@k.
+    Ảnh query luôn bị loại khỏi ``others`` (kết quả dùng để tính P@k/mAP@k)
+    bằng một điều kiện lọc tường minh — việc lọc đó luôn đúng theo cấu trúc
+    code, nên không cần một con số riêng để "xác nhận" nó. ``self_hits`` đo
+    một thứ khác: ảnh query xuất hiện bao nhiêu lần trong ranking THÔ (trước
+    khi lọc), tức nó có thật sự là láng giềng gần nhất của chính nó không.
+    Giá trị bình thường là đúng bằng ``n_queries`` (mỗi ảnh luôn khớp tuyệt
+    đối với chính vector của nó). Thấp hơn gợi ý vector cache (dùng để tạo
+    query) không khớp vector đã nạp vào collection (cache/collection lệch
+    nhau); cao hơn gợi ý corpus có nhiều point cùng image_id (dữ liệu trùng
+    lặp) — cả hai đều là dấu hiệu cần kiểm tra trước khi tin P@k.
     """
     space = get_space(space_name)
     collection = collection_name(space, ctx.settings)
@@ -175,14 +183,14 @@ def eval_image2image(
     ranked_labels: list[list[set[str]]] = []
     self_hits = 0
     for image_id, ranking in zip(image_ids, rankings):
+        # Đếm trên `ranking` THÔ (trước lọc) — cố ý. Đếm trên `others` (sau
+        # lọc) sẽ luôn ra 0 cho mọi input, vì `others` được xây dựng ngay bên
+        # dưới bằng chính điều kiện loại trừ `other != image_id`: một con số
+        # đúng-theo-cấu-trúc-code như vậy không phản ánh gì về dữ liệu thật,
+        # chỉ lặp lại một sự thật toán học. Đếm trên `ranking` mới thật sự phụ
+        # thuộc dữ liệu (xem docstring của hàm để biết cách đọc con số này).
+        self_hits += sum(1 for other in ranking if other == image_id)
         others = [other for other in ranking if other != image_id][:k]
-        # self_hits được đếm trên kết quả CUỐI CÙNG (sau lọc), không phải trên
-        # ranking thô: ảnh query luôn là láng giềng gần nhất của chính nó nên
-        # gần như chắc chắn xuất hiện trong ranking thô — đếm ở đó sẽ báo
-        # "thất bại" ngay cả khi việc loại bỏ hoạt động đúng. self_hits ở đây
-        # chỉ >0 khi bước lọc phía trên thật sự thất bại (vd nếu tương lai có
-        # ai đó bỏ điều kiện lọc, hoặc corpus có point trùng image_id).
-        self_hits += sum(1 for other in others if other == image_id)
         query_labels.append(set(ctx.corpus.by_image_id[image_id].categories))
         ranked_labels.append(
             [set(ctx.corpus.by_image_id[other].categories) for other in others]
