@@ -1,0 +1,231 @@
+{
+  "results": [
+    {
+      "image_id": 400794,
+      "file_name": "000000400794.jpg",
+      "thumb_url": "/thumbs/000000400794.jpg",
+      "score": 0.29096222,
+      "captions": [
+        "A man sitting at a table eating food from a plate.",
+        "A man is eating some food at a table.",
+        "A man with a bite of pizza from a plate.",
+        "A man eating crust sitting by a table.",
+        "A man sitting at a table eating some food"
+      ],
+      "categories": [
+        "bottle",
+        "fork",
+        "person",
+        "pizza"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 273760,
+      "file_name": "000000273760.jpg",
+      "thumb_url": "/thumbs/000000273760.jpg",
+      "score": 0.2823059,
+      "captions": [
+        "A man standing on top of a tennis court holding a racquet.",
+        "a tennis player on a court with a racket",
+        "a man on a field with a tennis racket in his hand",
+        "A man is dressed in blue playing tennis.",
+        "a man that has a tennis racket in his hand"
+      ],
+      "categories": [
+        "person",
+        "tennis racket"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 152214,
+      "file_name": "000000152214.jpg",
+      "thumb_url": "/thumbs/000000152214.jpg",
+      "score": 0.27899447,
+      "captions": [
+        "A man in a suit smiling at the camera",
+        "A guy in a business suit and glasses smiling",
+        "a smiling man wearing a suit and tie in front of a colorful wall",
+        "A middle aged man dressed in a blue suit smiling at the camera.",
+        "a close up of a person standing wearing a suit and tie"
+      ],
+      "categories": [
+        "person",
+        "tie"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 384808,
+      "file_name": "000000384808.jpg",
+      "thumb_url": "/thumbs/000000384808.jpg",
+      "score": 0.2736053,
+      "captions": [
+        "A man taking his picture in a bathroom mirror.",
+        "A man in blue shirt taking a picture in bathroom mirror.",
+        "A man is taking a picture of himself in the bathroom using the mirror for a reflection.",
+        "A man taking a picture of his reflection in a mirror.",
+        "A bathroom sink sitting under a bathroom mirror."
+      ],
+      "categories": [
+        "bottle",
+        "cell phone",
+        "person",
+        "sink",
+        "toilet"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 131444,
+      "file_name": "000000131444.jpg",
+      "thumb_url": "/thumbs/000000131444.jpg",
+      "score": 0.27197307,
+      "captions": [
+        "A man wearing a hat and a gray jacket.",
+        "A man with a suit and tie and a fedora on.",
+        "A man wears a suit with a blue shirt and a multicolored tie.",
+        "A man in a suit and tie wearing a hat.",
+        "a man that is in a suite and a tie"
+      ],
+      "categories": [
+        "person",
+        "tie"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 206025,
+      "file_name": "000000206025.jpg",
+      "thumb_url": "/thumbs/000000206025.jpg",
+      "score": 0.27174455,
+      "captions": [
+        "The man in the business suit wears a striped blue and white tie.",
+        "a man in a tie stand in front of a tree",
+        "A man wearing glasses and a lavender shirt.",
+        "A man in a striped suit stands in front of palm trees.",
+        "A business man with a striped blue tie standing in front of a palm tree."
+      ],
+      "categories": [
+        "person",
+        "tie"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 389812,
+      "file_name": "000000389812.jpg",
+      "thumb_url": "/thumbs/000000389812.jpg",
+      "score": 0.2696045,
+      "captions": [
+        "A smiling man holds a bunch of freshly picked bananas",
+        "A man standing holding a bunch of bananas.",
+        "A smiling man in a jungle holds a bunch of plant parts.",
+        "A man holding a bunch of ripe bananas.",
+        "A man is holding a bunch of bananas."
+      ],
+      "categories": [
+        "banana",
+        "person"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 173008,
+      "file_name": "000000173008.jpg",
+      "thumb_url": "/thumbs/000000173008.jpg",
+      "score": 0.26818427,
+      "captions": [
+        "A man in a tropical print shirt with glasses and long hair is eating a banana.",
+        "A man wearing a Hawaiian shirt eats a banana instead of pastries.",
+        "Man taking a bite of a half peeled banana.",
+        "a person eating a banana in a kitchen",
+        "A man eating a banana at a kitchen counter."
+      ],
+      "categories": [
+        "banana",
+        "cake",
+        "cup",
+        "microwave",
+        "orange",
+        "oven",
+        "person",
+        "scissors",
+        "toaster"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 55528,
+      "file_name": "000000055528.jpg",
+      "thumb_url": "/thumbs/000000055528.jpg",
+      "score": 0.26801246,
+      "captions": [
+        "A man holding a paper bag while showing the camera a toothbrush.",
+        "A young man sitting in a chair holding a toothbrush.",
+        "A man is holding a toothbrush and a paper bag while seated.",
+        "A young man seated in a gray chair holding a toothbrush.",
+        "Young man wearing glasses holding up a toothbrush."
+      ],
+      "categories": [
+        "book",
+        "clock",
+        "couch",
+        "person",
+        "remote",
+        "toothbrush"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 218439,
+      "file_name": "000000218439.jpg",
+      "thumb_url": "/thumbs/000000218439.jpg",
+      "score": 0.2660225,
+      "captions": [
+        "A man laying on his bed looking at a phone and brushing his teeth",
+        "This guy is looking at his cell phone while brushing his teeth.",
+        "A man using a toothbrush in his room on bed",
+        "A kid on a bed with dozens of photos on the wall behind him.",
+        "Man brushing his teeth and looking at his phone."
+      ],
+      "categories": [
+        "bed",
+        "cell phone",
+        "cup",
+        "person",
+        "toothbrush",
+        "tv"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 30.132400017464533,
+  "encode_ms": 21.86259999871254,
+  "search_ms": 4.222699993988499,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a man in a striped blue shirt"
+}

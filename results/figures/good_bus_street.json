@@ -1,0 +1,219 @@
+{
+  "results": [
+    {
+      "image_id": 1584,
+      "file_name": "000000001584.jpg",
+      "thumb_url": "/thumbs/000000001584.jpg",
+      "score": 0.3168722,
+      "captions": [
+        "The red, double decker bus is driving past other buses.",
+        "A red double decker bus driving down a city street.",
+        "A red bus is driving on the road.",
+        "A double decker bus rolls along the streets.",
+        "a red double decker bus that is in the middle of the road"
+      ],
+      "categories": [
+        "bus",
+        "person"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 568290,
+      "file_name": "000000568290.jpg",
+      "thumb_url": "/thumbs/000000568290.jpg",
+      "score": 0.30580202,
+      "captions": [
+        "A red extra long bus driving down a stone covered walkway.",
+        "Articulated bus, first part is red, back part is grey, on dull red street.",
+        "A bus driving down a road by some tall trees and buildings.",
+        "a double bus driving on a city  street",
+        "A bus traveling on a street during the day."
+      ],
+      "categories": [
+        "bus",
+        "car",
+        "motorcycle",
+        "person",
+        "truck"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 284725,
+      "file_name": "000000284725.jpg",
+      "thumb_url": "/thumbs/000000284725.jpg",
+      "score": 0.30570275,
+      "captions": [
+        "a public transit bus on a city street",
+        "A red bus parked on a street with another vehicle parked nearby.",
+        "A red bus sitting on the side of a road.",
+        "Red bus parked on street near stone steps.",
+        "A bus in China is parked along a curb."
+      ],
+      "categories": [
+        "bus",
+        "car",
+        "person"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 177893,
+      "file_name": "000000177893.jpg",
+      "thumb_url": "/thumbs/000000177893.jpg",
+      "score": 0.30458826,
+      "captions": [
+        "a red and white passenger bus with a 'final destination 5' billboard on the side of it",
+        "A parked bus next to a building and palm trees.",
+        "A red and white bus parked in front of a sidewalk.",
+        "a city bus sits parked next to a side walk",
+        "A red and white bus parked by the curb near palm trees."
+      ],
+      "categories": [
+        "bus",
+        "car"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 110784,
+      "file_name": "000000110784.jpg",
+      "thumb_url": "/thumbs/000000110784.jpg",
+      "score": 0.30456215,
+      "captions": [
+        "A bus traveling down a street next to a tall building.",
+        "A strange trolley is being pulled through town.",
+        "A trolley with people drives down a street by a building.",
+        "A lady is riding the back of a trolley train.",
+        "Multiple colored bus passing beside a tiered building."
+      ],
+      "categories": [
+        "bus",
+        "person",
+        "truck"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 334371,
+      "file_name": "000000334371.jpg",
+      "thumb_url": "/thumbs/000000334371.jpg",
+      "score": 0.3001332,
+      "captions": [
+        "A tall building with four double decker buses driving along a parking lot.",
+        "A large long bus on a city street.",
+        "Two white double decker buses on a street",
+        "Double-decker buses sit at the curb in front of an old building.",
+        "Double-Decker buses line up at a bus stop."
+      ],
+      "categories": [
+        "bus",
+        "car",
+        "person",
+        "traffic light"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 460967,
+      "file_name": "000000460967.jpg",
+      "thumb_url": "/thumbs/000000460967.jpg",
+      "score": 0.29786795,
+      "captions": [
+        "A colorful bus parked in a lot beside a tall building with many windows.",
+        "A bus that is red white and blue with advertising on it driving down the street.",
+        "A big bus in a parking lot next to a big building",
+        "Photograph of an outdoor place with a bus.",
+        "A city bus in the parking lot of a building."
+      ],
+      "categories": [
+        "bus",
+        "person"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 249219,
+      "file_name": "000000249219.jpg",
+      "thumb_url": "/thumbs/000000249219.jpg",
+      "score": 0.29775617,
+      "captions": [
+        "A double decker bus driving down the road.",
+        "This is a double-decker bus shown in a tropical area.",
+        "A double decker bus driving down a city street.",
+        "A double decker red white and purple bus",
+        "A double decker tour bus with the logo \"SBS Transit\"."
+      ],
+      "categories": [
+        "bus"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 499775,
+      "file_name": "000000499775.jpg",
+      "thumb_url": "/thumbs/000000499775.jpg",
+      "score": 0.2957091,
+      "captions": [
+        "A yellow commuter bus leaving a bus stop at sunset",
+        "A yellow bus traveling through a city with small buildings.",
+        "The rear side of a bus on a street.",
+        "a yellow and white bus a red car a street and some houses",
+        "A bus is stopped along a street with no passengers waiting to board."
+      ],
+      "categories": [
+        "bus",
+        "car"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 550691,
+      "file_name": "000000550691.jpg",
+      "thumb_url": "/thumbs/000000550691.jpg",
+      "score": 0.29462433,
+      "captions": [
+        "A red double decker bus on a street.",
+        "A double decker bus is going down a street.",
+        "a passangers bus moving on the opposite side with the car",
+        "double-decker buses in the street in residential area",
+        "A red double decker bus headed to Victoria is parked on the side of the street."
+      ],
+      "categories": [
+        "bus",
+        "car",
+        "person",
+        "tie"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 31.4174999948591,
+  "encode_ms": 20.289800013415515,
+  "search_ms": 7.453500002156943,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a double decker bus on a city street"
+}

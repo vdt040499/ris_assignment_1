@@ -1,0 +1,237 @@
+{
+  "results": [
+    {
+      "image_id": 329455,
+      "file_name": "000000329455.jpg",
+      "thumb_url": "/thumbs/000000329455.jpg",
+      "score": 0.3391464,
+      "captions": [
+        "A very large pizza on a wooden table .",
+        "A giant pizza sitting on top of a large cutting board.",
+        "a cutting board covered with a big pepperoni pizza",
+        "A square-shaped pizza on a wooden board near white plates.",
+        "Some people sitting at a table with a large oval shaped pizza."
+      ],
+      "categories": [
+        "chair",
+        "cup",
+        "dining table",
+        "person",
+        "pizza"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 236412,
+      "file_name": "000000236412.jpg",
+      "thumb_url": "/thumbs/000000236412.jpg",
+      "score": 0.32704306,
+      "captions": [
+        "A pizza casserole  with two kinds of crackers on the side.",
+        "A plate of food is sitting on a red clothe.",
+        "A pizza pie sits in a dish on a table.",
+        "A homemade cheese pizza and crackers are on the table.",
+        "A cheese pizza pie is in the serving dish on the counter."
+      ],
+      "categories": [
+        "pizza",
+        "spoon"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 351331,
+      "file_name": "000000351331.jpg",
+      "thumb_url": "/thumbs/000000351331.jpg",
+      "score": 0.32471606,
+      "captions": [
+        "a small pepperoni pizza next to a fork",
+        "The  pizza  is cheesey wiith peporoni for the topping",
+        "A pepperoni pizza sitting on top of a white plate.",
+        "the pizza is on a plate with a fork next to it",
+        "a small fully cooked pizza resting on plate next to a fork"
+      ],
+      "categories": [
+        "dining table",
+        "fork",
+        "pizza"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 256916,
+      "file_name": "000000256916.jpg",
+      "thumb_url": "/thumbs/000000256916.jpg",
+      "score": 0.32241714,
+      "captions": [
+        "A silver pan topped with pepperoni pizza on a table.",
+        "Pizzas are sitting on trays on a table.",
+        "Several square pizzas are sitting on round plates.",
+        "Four metal plates each holding a pizza on a table.",
+        "Four pans of pizza set on a long table."
+      ],
+      "categories": [
+        "chair",
+        "dining table",
+        "knife",
+        "pizza"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 451693,
+      "file_name": "000000451693.jpg",
+      "thumb_url": "/thumbs/000000451693.jpg",
+      "score": 0.31920564,
+      "captions": [
+        "pizza sitting on stack of plates on wood background",
+        "a pizza on a white plate on a wooden table",
+        "A small pizza with olives is place on a stack of plates.",
+        "A pizza placed on a white plate on a wooden table.",
+        "A pizza that is on a stack of plates."
+      ],
+      "categories": [
+        "pizza"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 378284,
+      "file_name": "000000378284.jpg",
+      "thumb_url": "/thumbs/000000378284.jpg",
+      "score": 0.3155476,
+      "captions": [
+        "A person sits across from a pizza ready to be served.",
+        "Small personal pizza on a crust made of rice.",
+        "A dish of some sort on a pizza stone.",
+        "A strange pizza made from rice and fish and vegetables.",
+        "some kind of chicken, rice, and vegetable dish on a pizza tray being served to a man."
+      ],
+      "categories": [
+        "dining table",
+        "fork",
+        "knife",
+        "person",
+        "pizza"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 116208,
+      "file_name": "000000116208.jpg",
+      "thumb_url": "/thumbs/000000116208.jpg",
+      "score": 0.31470338,
+      "captions": [
+        "A very large pizza covered in cheese and toppings.",
+        "pizza on a serving tray with empty plates next to it",
+        "A large pizza is shown on a table, with bottles and glasses of wine.",
+        "A pizza that is sitting on a platter.",
+        "Large baked pizza served on stand at table with beverages."
+      ],
+      "categories": [
+        "bottle",
+        "chair",
+        "cup",
+        "dining table",
+        "person",
+        "pizza",
+        "wine glass"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 47112,
+      "file_name": "000000047112.jpg",
+      "thumb_url": "/thumbs/000000047112.jpg",
+      "score": 0.31404096,
+      "captions": [
+        "A dining table has a large pizza and wine glasses.",
+        "A close up image of a half onion and mushroom pizza.",
+        "A pizza sitting on a plate in front of a glass of wine.",
+        "A pizza served on a white plate next to empty wine glass and beer.",
+        "A large pizza on a white plate sitting on a blue table."
+      ],
+      "categories": [
+        "bottle",
+        "bowl",
+        "chair",
+        "dining table",
+        "knife",
+        "person",
+        "pizza",
+        "wine glass"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 474167,
+      "file_name": "000000474167.jpg",
+      "thumb_url": "/thumbs/000000474167.jpg",
+      "score": 0.31311375,
+      "captions": [
+        "A woven basket with slices of pizza in it",
+        "People are eating pizza and drinking soda at a table.",
+        "SLICES OF PIZZA IN BASKETS ON A TABLE OUTSIDE",
+        "two plates of pizza and a drink on a wooden table",
+        "A couple of slices of pizza sitting on white paper."
+      ],
+      "categories": [
+        "bottle",
+        "dining table",
+        "handbag",
+        "person",
+        "pizza"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 172571,
+      "file_name": "000000172571.jpg",
+      "thumb_url": "/thumbs/000000172571.jpg",
+      "score": 0.3095404,
+      "captions": [
+        "A very thick pizza is on a plate with one piece taken.",
+        "Chicago style deep dish pizza with tomato sauce and sausage.",
+        "A sliced pizza sitting on a table next to a glass of water and a glass of wine.",
+        "A deep dish style pizza with a slice cut out of it next to a glass of white wine.",
+        "A thick crust cut pizza on a plate with wine by its side."
+      ],
+      "categories": [
+        "cup",
+        "fork",
+        "knife",
+        "person",
+        "pizza",
+        "wine glass"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 28.533799981232733,
+  "encode_ms": 20.175399986328557,
+  "search_ms": 4.239800007781014,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a plate of pizza on a wooden table"
+}

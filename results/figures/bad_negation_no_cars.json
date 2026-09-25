@@ -1,0 +1,232 @@
+{
+  "results": [
+    {
+      "image_id": 314251,
+      "file_name": "000000314251.jpg",
+      "thumb_url": "/thumbs/000000314251.jpg",
+      "score": 0.29494083,
+      "captions": [
+        "A parade of motorcycles is going through a group of tall trees.",
+        "A group of motorcyclists drive down a tree lined street.",
+        "A group of motorcycles down a long street filled with trees on either side.",
+        "A group of people riding mopeds through a park.",
+        "A group of scooters rides down a street"
+      ],
+      "categories": [
+        "car",
+        "motorcycle",
+        "person"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 115946,
+      "file_name": "000000115946.jpg",
+      "thumb_url": "/thumbs/000000115946.jpg",
+      "score": 0.28754306,
+      "captions": [
+        "A street intersection with old buildings in the background.",
+        "a traffic light above a city street",
+        "Cars are parked on both sides of the narrow street full of tall buildings.",
+        "The people are parked along the street by the tall buildings.",
+        "The street light is green above a quiet city street."
+      ],
+      "categories": [
+        "car",
+        "person",
+        "potted plant",
+        "traffic light"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 227511,
+      "file_name": "000000227511.jpg",
+      "thumb_url": "/thumbs/000000227511.jpg",
+      "score": 0.28013924,
+      "captions": [
+        "Several cars parked along the side of a street next to a street sign.",
+        "Several cars parked along a no parking area.",
+        "Rows of cars parked on the side of a city street going uphill.",
+        "Cars parked on the side of a street.",
+        "There are plenty of cars parked on the side of the street."
+      ],
+      "categories": [
+        "car",
+        "fire hydrant"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 512564,
+      "file_name": "000000512564.jpg",
+      "thumb_url": "/thumbs/000000512564.jpg",
+      "score": 0.27912587,
+      "captions": [
+        "Various vehicles are driving down a city street.",
+        "a couple of buses that are on a empty street",
+        "A city street lined with very tall buildings.",
+        "A two way street has minimal cars on it.",
+        "Buildings on both sides next to a street."
+      ],
+      "categories": [
+        "bus",
+        "car",
+        "person",
+        "traffic light",
+        "truck"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 226417,
+      "file_name": "000000226417.jpg",
+      "thumb_url": "/thumbs/000000226417.jpg",
+      "score": 0.2789051,
+      "captions": [
+        "Many people are driving motorcycles through an intersection.",
+        "A gang of bikers driving down a  busy city street.",
+        "Several motorcycles are parked at a red light in the road in a city with tall buildings.",
+        "a bunch of people on motor scooters riding on a street",
+        "Most people negotiate the city streets with motorbikes in this Asian city."
+      ],
+      "categories": [
+        "backpack",
+        "bicycle",
+        "car",
+        "fire hydrant",
+        "handbag",
+        "motorcycle",
+        "person",
+        "traffic light"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 350023,
+      "file_name": "000000350023.jpg",
+      "thumb_url": "/thumbs/000000350023.jpg",
+      "score": 0.27846485,
+      "captions": [
+        "A city street show cars going up and down the hill.",
+        "A hill of a street at a stoplight with traffic",
+        "A street that has four lanes of traffic.",
+        "a long road with cars on both sides of it",
+        "A busy intersection in a city features several cars and buildings."
+      ],
+      "categories": [
+        "bicycle",
+        "bus",
+        "car",
+        "motorcycle",
+        "person",
+        "traffic light"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 521141,
+      "file_name": "000000521141.jpg",
+      "thumb_url": "/thumbs/000000521141.jpg",
+      "score": 0.27578783,
+      "captions": [
+        "A shot of a road in a city with a no peddling sign.",
+        "The people are walking down the street in the city.",
+        "People walking in a urban area near a 'no peddling' sign",
+        "a small group of people on a side walk next to a street sign",
+        "People are walking on a sidewalk near a sign that says no peddling."
+      ],
+      "categories": [
+        "car",
+        "person"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 54967,
+      "file_name": "000000054967.jpg",
+      "thumb_url": "/thumbs/000000054967.jpg",
+      "score": 0.2748688,
+      "captions": [
+        "A city street with cars and street lights.",
+        "A view down a street of a couple of buildings and a couple of cars.",
+        "There are cars on the street in the distance.",
+        "a couple of cars are driving down a city street",
+        "A city road with cars, truck and traffic lights"
+      ],
+      "categories": [
+        "car",
+        "person",
+        "traffic light"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 309391,
+      "file_name": "000000309391.jpg",
+      "thumb_url": "/thumbs/000000309391.jpg",
+      "score": 0.27242368,
+      "captions": [
+        "Many electronic wires pass over the road with few cars on it.",
+        "This is a photo of traffic on a busy city highway.",
+        "Several vehicles are moving down a city street.",
+        "A view of street with a bus parked on the side.",
+        "Vehicle traffic on a hilly street in a small town."
+      ],
+      "categories": [
+        "bicycle",
+        "bus",
+        "car",
+        "person",
+        "traffic light"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 6723,
+      "file_name": "000000006723.jpg",
+      "thumb_url": "/thumbs/000000006723.jpg",
+      "score": 0.27086318,
+      "captions": [
+        "Row of buildings on empty street near side walk.",
+        "A building lined street with three lanes and light traffic.",
+        "A street with light poles and businesses on both sides.",
+        "A street with a row of older red brick building on one side.",
+        "A bike and walking path running side by side near a city street."
+      ],
+      "categories": [
+        "bus",
+        "car",
+        "truck"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 39.524399995571,
+  "encode_ms": 30.77869999106042,
+  "search_ms": 4.626299982191995,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a street with no cars"
+}
