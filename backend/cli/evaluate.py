@@ -8,6 +8,7 @@ phép chuẩn hoá là một.
 
 import argparse
 import csv
+import hashlib
 import json
 import statistics
 from collections.abc import Callable, Sequence
@@ -55,10 +56,21 @@ def text_vectors(
 
     ``cache_key`` phải phân biệt được bộ query và template, nếu không hai thí
     nghiệm khác nhau sẽ dùng chung một cache và cho ra số giống nhau một cách
-    giả tạo.
+    giả tạo. Tên file cache còn bao gồm một hash ngắn của chính nội dung
+    ``texts`` (không chỉ ``cache_key`` và số lượng): nếu nội dung câu query đổi
+    nhưng số lượng câu giữ nguyên — ví dụ đổi ``RANDOM_SEED`` khi lấy mẫu, hay
+    sau này sửa bản dịch trong ``queryset_vi.json`` — cache cũ vẫn khớp đúng
+    tên file theo `{cache_key}_{len(texts)}` cũ và bị dùng nhầm cho một bộ
+    query khác, cho ra số liệu sai một cách im lặng (không có lỗi nào được
+    raise). Hash nội dung khiến nội dung khác luôn sinh tên file khác, nên
+    cache cũ tự động không khớp nữa và được sinh lại, thay vì bị dùng nhầm.
     """
     ctx.settings.cache_dir.mkdir(parents=True, exist_ok=True)
-    cache = ctx.settings.cache_dir / f"txt_{space_name}_{cache_key}_{len(texts)}.npy"
+    content_hash = hashlib.sha1("\n".join(texts).encode("utf-8")).hexdigest()[:12]
+    cache = (
+        ctx.settings.cache_dir
+        / f"txt_{space_name}_{cache_key}_{len(texts)}_{content_hash}.npy"
+    )
     if cache.exists():
         return np.load(cache)
     vectors = ctx.encoder_factory(space_name, ctx.settings).encode_texts(list(texts))
