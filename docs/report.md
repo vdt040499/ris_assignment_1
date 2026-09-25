@@ -65,8 +65,10 @@ COCO val2017 ──ingest──> corpus.jsonl + thumbs/
   này không thành phần nào đọc lại COCO JSON gốc.
 - **`build_index`** (`backend/cli/build_index.py`, offline, mỗi space một
   lần): encode ảnh theo batch trên CPU, upsert vào collection Qdrant, ghi
-  `data/index_meta/<space>.json` — báo cáo lấy thời gian build và số point từ
-  đúng file này (mục 4), không chép tay.
+  `data/index_meta/<space>.json`. Thư mục `data/` bị gitignore nên bản ghi này
+  không có sẵn trên một checkout mới; báo cáo (mục 4) lấy thời gian build và số
+  point từ **bản sao đã commit ở `results/index_meta/<space>.json`**, không
+  chép tay.
 - **`search-api`** (`backend/app/main.py` + `search.py`, online): nhận query
   text hoặc ảnh, chọn encoder theo `space`, gọi Qdrant `query_points`, trả
   top-k kèm score và payload. Encoder nạp lười, cache LRU tối đa
@@ -146,7 +148,12 @@ Toàn bộ bảng dưới đây là **nguyên văn** từ `results/axis*.md`, si
 
 ### 4.1 Trục 1a — Model, text→ảnh (`results/axis1_model_t2i.md`)
 
-5.000 caption làm query, tìm trên 5.000 ảnh (giao thức COCO 5k chuẩn).
+5.000 caption làm query, tìm trên 5.000 ảnh — nhưng đây **không phải** giao
+thức COCO 5k chuẩn (giao thức chuẩn dùng *toàn bộ* caption của 5.000 ảnh, tức
+25.014 caption). Đây là một **mẫu ngẫu nhiên 5.000 trong tổng 25.014 caption**,
+lấy với seed cố định (`RANDOM_SEED=42`, `sample_caption_queries` trong
+`backend/cli/evaluate.py`) để mọi lần chạy lại cho cùng một tập query. Chạy
+`python tasks.py eval --sample 0` để dùng toàn bộ 25.014 caption thay vì mẫu.
 
 | space | n_queries | exact | hnsw_ef | prompt_template | R@1 | R@5 | R@10 | MRR@10 | search_ms_p50 | search_ms_p95 |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -328,7 +335,7 @@ vẫn thấp hơn EN nhưng khác một trời một vực so với baseline s�
 0.255) — đây chính là đánh đổi đa ngôn ngữ mà thiết kế dự đoán trước ở §6.2
 spec: "baseline sụp trên VI; multilingual mất vài điểm trên EN".
 
-### 4.7 Thời gian build index (`data/index_meta/*.json`)
+### 4.7 Thời gian build index (`results/index_meta/*.json`)
 
 | Space | encode_seconds | n_points | Ghi chú |
 |---|---|---|---|
@@ -341,7 +348,7 @@ spec: "baseline sụp trên VI; multilingual mất vài điểm trên EN".
 | `bm25-cap` | 0.22s | 5.000 | không encode neural, chỉ dựng inverted index từ khoá |
 
 **Ghi chú quan trọng về `resnet50`.** Con số 21.04s trong
-`data/index_meta/resnet50.json` là kết quả của một lần build lại bằng
+`results/index_meta/resnet50.json` là kết quả của một lần build lại bằng
 `--force` **tái sử dụng vector cache đã có sẵn từ file**, không phải thời gian
 encode 5.000 ảnh từ đầu bằng ResNet-50. Lần build gốc (encode thật từ đầu) đã
 crash giữa chừng lúc upsert do sự cố hết dung lượng đĩa thật trong quá trình
@@ -416,11 +423,14 @@ category với ảnh khác cao hơn hẳn một ảnh chỉ có 1 category, bấ
 giống nhau thật về mặt thị giác/ngữ nghĩa. Đây là lý do ResNet-50 (mục 4.2) đo
 được gần ngang CLIP dù trực giác cho rằng CLIP nên "hiểu ảnh" tốt hơn nhiều.
 
-**Giới hạn lấy mẫu text→ảnh.** Trục 1 (t2i) dùng toàn bộ 25.014 caption của
-5.000 ảnh này — tức là chỉ so khớp trong phạm vi tập dữ liệu đã ingest, không
-phải toàn bộ phân bố ảnh COCO/Internet. Con số R@k đo được là "khả năng tìm
-lại đúng ảnh trong một tập 5.000 ảnh đã biết trước", không nên suy rộng thành
-"khả năng tìm ảnh đúng trong một kho ảnh mở bất kỳ".
+**Giới hạn lấy mẫu text→ảnh.** Trục 1 (t2i) dùng **5.000 caption lấy mẫu ngẫu
+nhiên với seed cố định (42) trong tổng 25.014 caption** của 5.000 ảnh này —
+không phải toàn bộ 25.014 caption, và không phải giao thức COCO 5k chuẩn (xem
+mục 4.1). Ngoài giới hạn lấy mẫu đó, số liệu cũng chỉ so khớp trong phạm vi tập
+dữ liệu đã ingest, không phải toàn bộ phân bố ảnh COCO/Internet. Con số R@k đo
+được là "khả năng tìm lại đúng ảnh trong một tập 5.000 ảnh đã biết trước",
+không nên suy rộng thành "khả năng tìm ảnh đúng trong một kho ảnh mở bất kỳ".
+Muốn đo trên toàn bộ 25.014 caption, chạy `python tasks.py eval --sample 0`.
 
 **val2017 khác Karpathy test split.** Paper CLIP gốc và nhiều benchmark
 retrieval chuẩn dùng Karpathy test split (một tập con 5.000 ảnh khác, chọn
@@ -428,10 +438,13 @@ theo cách khác từ COCO). Số liệu trong báo cáo này **không so sánh 
 được** với số trong paper CLIP dù cùng đơn vị đo (R@1/5/10) — khác tập ảnh,
 khác phân bố caption.
 
-**Bộ query ngắn chỉ phủ 80 category, không phải 200.** `data/queryset_short.json`
-dùng cho trục 3(b) lấy mẫu 80 category thực có mặt trong 5.000 ảnh corpus,
-không phải 200 category đầy đủ của COCO — một số category hiếm không xuất
-hiện đủ trong tập 5.000 ảnh để tạo query có ý nghĩa.
+**Bộ query ngắn có đúng 80 query, mỗi query một category.** COCO chỉ có đúng
+**80 category vật thể** (không phải 200 — con số 200 trong spec §6.2 là số
+*query* dự kiến ban đầu của bộ này, không phải số category, và COCO không có
+tập 200 category nào để so với). `data/queryset_short.json` dùng cho trục 3(b)
+dựng một query cho mỗi category COCO thực có mặt trong 5.000 ảnh corpus, nên
+80 là trần tự nhiên của cách dựng này, không phải một thiếu hụt so với một tập
+category lớn hơn.
 
 **Giới hạn phương pháp lộ ra ở mục 5.** Đếm số lượng, phủ định và quan hệ
 không gian đều hỏng nặng — đây là giới hạn đã biết của contrastive learning

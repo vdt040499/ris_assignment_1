@@ -65,7 +65,7 @@ cd frontend && npm test && npm run typecheck
 
 - Thiết kế: `docs/superpowers/specs/2026-09-23-multimodal-search-design.md`
 - Báo cáo: `docs/report.md`
-- Bảng số liệu ablation: `results/axis*.md` (+ `.csv` tương ứng), build metadata: `data/index_meta/*.json`
+- Bảng số liệu ablation: `results/axis*.md` (+ `.csv` tương ứng), build metadata: `results/index_meta/*.json` (`data/index_meta/*.json` là bản sinh ra khi build lại, bị gitignore nên không có sẵn trên checkout mới)
 - Phân tích tốt/xấu (14 ví dụ, kèm hình): `results/qualitative.md`, hình tại `results/figures/`
 - Kịch bản quay demo (chưa quay, xem ghi chú trong file): `docs/demo-script.md`
 
