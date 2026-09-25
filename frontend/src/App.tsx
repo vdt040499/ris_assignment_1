@@ -45,6 +45,7 @@ export default function App() {
   const [bootError, setBootError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SearchResultItem | null>(null);
   const [comparing, setComparing] = useState(false);
+  const [spaceSwitchNotice, setSpaceSwitchNotice] = useState<string | null>(null);
   const { response, loading, error, runText, runImage, runSimilar } = useSearch();
 
   useEffect(() => {
@@ -78,20 +79,83 @@ export default function App() {
     [runText, space, params],
   );
 
+  /**
+   * Nếu space hiện tại không hỗ trợ `image2image` (ví dụ vừa bấm một chip
+   * tiếng Việt, đặt space = `mclip-b32`, chỉ hỗ trợ text2image), request tìm
+   * bằng ảnh chắc chắn bị backend từ chối (400 `ModeNotSupportedError`), và
+   * `useSearch` xoá trắng cả grid kết quả để hiện lỗi — đúng đường đi mà spec
+   * gọi là ranh giới giữa "demo mượt" và "demo bị kẹt". Tự chuyển sang space
+   * `ready` đầu tiên hỗ trợ `image2image` (giống pattern `firstReady` ở effect
+   * phía trên) để không bao giờ gửi một request chắc chắn hỏng.
+   *
+   * @returns space nên dùng để gọi `runSimilar`/`runImage`, cùng cờ `switched`
+   *   để báo cho người dùng biết là có đổi model.
+   */
+  const resolveImageSpace = useCallback(
+    (current: string): { space: string; switched: boolean } => {
+      const currentInfo = spaces.find((item) => item.name === current);
+      if (currentInfo?.modes.includes("image2image")) {
+        return { space: current, switched: false };
+      }
+      const fallback = spaces.find(
+        (item) => item.ready && item.modes.includes("image2image"),
+      );
+      return fallback
+        ? { space: fallback.name, switched: true }
+        : { space: current, switched: false };
+    },
+    [spaces],
+  );
+
   /** Đóng modal rồi chạy tìm ảnh tương tự bằng `image_id` của ảnh đang xem. */
   const findSimilar = useCallback(
     (imageId: number) => {
       setSelected(null);
+      const target = resolveImageSpace(space);
+      if (target.switched) {
+        setSpace(target.space);
+        setSpaceSwitchNotice(
+          `Đã tự chuyển sang model "${target.space}" vì "${space}" không hỗ trợ tìm ảnh tương tự.`,
+        );
+      } else {
+        setSpaceSwitchNotice(null);
+      }
       runSimilar({
         imageId,
-        space,
+        space: target.space,
         k: params.k,
         exact: params.exact,
         hnswEf: params.exact ? null : params.hnswEf,
         filters: params.filters,
       });
     },
-    [runSimilar, space, params],
+    [runSimilar, resolveImageSpace, space, params],
+  );
+
+  /** Dùng chung cho ảnh upload (chọn file / kéo-thả / dán) — cùng cơ chế tự
+   * chuyển space như `findSimilar` ở trên, vì cả hai đều gọi `/search/image`
+   * và có thể rơi vào cùng space không hỗ trợ `image2image`. */
+  const searchByImage = useCallback(
+    (file: File) => {
+      const target = resolveImageSpace(space);
+      if (target.switched) {
+        setSpace(target.space);
+        setSpaceSwitchNotice(
+          `Đã tự chuyển sang model "${target.space}" vì "${space}" không hỗ trợ tìm bằng ảnh.`,
+        );
+      } else {
+        setSpaceSwitchNotice(null);
+      }
+      runImage({
+        file,
+        space: target.space,
+        k: params.k,
+        exact: params.exact,
+        hnswEf: params.exact ? null : params.hnswEf,
+        filters: params.filters,
+      });
+    },
+    [runImage, resolveImageSpace, space, params],
   );
 
   return (
@@ -110,7 +174,15 @@ export default function App() {
       )}
 
       <div className="flex flex-wrap items-end gap-4">
-        <ModelSelect spaces={spaces} value={space} onChange={setSpace} label="Model" />
+        <ModelSelect
+          spaces={spaces}
+          value={space}
+          onChange={(value) => {
+            setSpace(value);
+            setSpaceSwitchNotice(null);
+          }}
+          label="Model"
+        />
         <button
           className={`rounded-md border px-3 py-2 text-sm ${
             comparing
@@ -126,16 +198,7 @@ export default function App() {
 
       <SearchBar
         onSearchText={(query) => search(query)}
-        onSearchImage={(file) =>
-          runImage({
-            file,
-            space,
-            k: params.k,
-            exact: params.exact,
-            hnswEf: params.exact ? null : params.hnswEf,
-            filters: params.filters,
-          })
-        }
+        onSearchImage={searchByImage}
         disabled={loading}
       />
 
@@ -143,11 +206,17 @@ export default function App() {
         examples={examples}
         onPick={(example) => {
           setSpace(example.space);
+          setSpaceSwitchNotice(null);
           search(example.query, example.space);
         }}
       />
 
       <AdvancedPanel params={params} onChange={setParams} categories={categories} />
+      {spaceSwitchNotice && (
+        <p className="rounded-md border border-indigo-800 bg-indigo-950/60 px-3 py-2 text-sm text-indigo-200">
+          {spaceSwitchNotice}
+        </p>
+      )}
       <StatusBar response={response} error={error} loading={loading} />
 
       <ResultGrid
