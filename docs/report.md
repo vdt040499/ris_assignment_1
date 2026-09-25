@@ -175,11 +175,11 @@ proxy "chia sẻ ít nhất một category COCO".
 
 | space | n_queries | P@10 | mAP@10 | self_hits | search_ms_p50 | search_ms_p95 |
 |---|---|---|---|---|---|---|
-| clip-b32 | 200 | 0.8805 | 0.9071 | 0 | 3.3 | 4.178 |
-| clip-b16 | 200 | 0.878 | 0.9116 | 0 | 3.355 | 4.529 |
-| laion-b32 | 200 | 0.8855 | 0.9152 | 0 | 3.338 | 4.467 |
-| siglip-b16 | 200 | 0.923 | 0.941 | 0 | 3.759 | 4.742 |
-| resnet50 | 200 | 0.8845 | 0.9078 | 0 | 5.88 | 6.548 |
+| clip-b32 | 200 | 0.8805 | 0.9071 | 200 | 4.153 | 7.097 |
+| clip-b16 | 200 | 0.878 | 0.9116 | 200 | 4.977 | 8.353 |
+| laion-b32 | 200 | 0.8855 | 0.9152 | 200 | 3.998 | 9.377 |
+| siglip-b16 | 200 | 0.923 | 0.941 | 200 | 4.969 | 7.703 |
+| resnet50 | 200 | 0.8845 | 0.9078 | 200 | 8.167 | 11.524 |
 
 **Đọc bảng.** SigLIP-B16 vẫn dẫn đầu cả ở chiều ảnh→ảnh (P@10 0.923). Điểm
 đáng chú ý nhất: **ResNet-50 thuần supervised-ImageNet (P@10 0.8845) gần như
@@ -187,9 +187,12 @@ ngang bằng CLIP-B32 multimodal (0.8805)** trên chính proxy đo lường này
 là với thước đo "chia sẻ category", một feature ImageNet cổ điển không hề thua
 kém CLIP. Đây không có nghĩa CLIP "vô dụng" cho i2i; nó có nghĩa proxy category
 thiên vị đặc điểm bố cục/vật thể nổi bật mà cả hai loại feature đều nắm được
-tốt — phần Giới hạn (mục 6) nêu rõ điểm yếu đo lường này. `self_hits = 0` ở
-mọi space xác nhận eval không vô tình đếm chính ảnh query như một kết quả
-đúng.
+tốt — phần Giới hạn (mục 6) nêu rõ điểm yếu đo lường này. `self_hits = 200` ở
+mọi space (đúng bằng `n_queries`) xác nhận mỗi ảnh query luôn là láng giềng
+gần nhất tuyệt đối của chính nó trong ranking thô, tức cache vector dùng để
+tạo query khớp đúng với vector đã nạp vào collection. Giá trị lành mạnh của
+cột này luôn là `n_queries`, không phải 0 — một giá trị gần 0 mới là dấu hiệu
+cache và collection lệch nhau, cần kiểm tra trước khi tin P@k/mAP@k.
 
 ### 4.3 Trục 2 — Normalize on/off (`results/axis2_normalize.md`)
 
