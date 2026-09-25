@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { fetchExamples, fetchSpaces } from "./api/client";
 import AdvancedPanel, { type AdvancedParams } from "./components/AdvancedPanel";
+import CompareView from "./components/CompareView";
+import DetailModal from "./components/DetailModal";
 import ExampleChips from "./components/ExampleChips";
 import ModelSelect from "./components/ModelSelect";
 import ResultGrid from "./components/ResultGrid";
 import SearchBar from "./components/SearchBar";
 import StatusBar from "./components/StatusBar";
 import { useSearch } from "./hooks/useSearch";
-import type { ExampleQuery, SpaceInfo } from "./types";
+import type { ExampleQuery, SearchResultItem, SpaceInfo } from "./types";
 
 const DEFAULT_PARAMS: AdvancedParams = {
   k: 20,
@@ -26,13 +28,24 @@ const DEFAULT_PARAMS: AdvancedParams = {
  */
 const DEFAULT_SPACE = "clip-b32";
 
+/**
+ * Cặp model mặc định cho chế độ so sánh — hai model có kiến trúc encoder
+ * khác nhau (OpenAI CLIP vs LAION OpenCLIP) nên kết quả xếp hạng thường lệch
+ * nhau rõ, minh hoạ tốt cho việc so sánh. Đặt tên hằng thay vì literal rời
+ * rạc trong JSX, theo đúng pattern của `DEFAULT_SPACE` ở trên.
+ */
+const COMPARE_DEFAULT_LEFT = "clip-b32";
+const COMPARE_DEFAULT_RIGHT = "laion-b32";
+
 export default function App() {
   const [spaces, setSpaces] = useState<SpaceInfo[]>([]);
   const [examples, setExamples] = useState<ExampleQuery[]>([]);
   const [space, setSpace] = useState(DEFAULT_SPACE);
   const [params, setParams] = useState<AdvancedParams>(DEFAULT_PARAMS);
   const [bootError, setBootError] = useState<string | null>(null);
-  const { response, loading, error, runText, runImage } = useSearch();
+  const [selected, setSelected] = useState<SearchResultItem | null>(null);
+  const [comparing, setComparing] = useState(false);
+  const { response, loading, error, runText, runImage, runSimilar } = useSearch();
 
   useEffect(() => {
     Promise.all([fetchSpaces(), fetchExamples()])
@@ -65,6 +78,22 @@ export default function App() {
     [runText, space, params],
   );
 
+  /** Đóng modal rồi chạy tìm ảnh tương tự bằng `image_id` của ảnh đang xem. */
+  const findSimilar = useCallback(
+    (imageId: number) => {
+      setSelected(null);
+      runSimilar({
+        imageId,
+        space,
+        k: params.k,
+        exact: params.exact,
+        hnswEf: params.exact ? null : params.hnswEf,
+        filters: params.filters,
+      });
+    },
+    [runSimilar, space, params],
+  );
+
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-5 bg-slate-900 p-6 text-slate-100">
       <header className="flex flex-col gap-1">
@@ -82,6 +111,17 @@ export default function App() {
 
       <div className="flex flex-wrap items-end gap-4">
         <ModelSelect spaces={spaces} value={space} onChange={setSpace} label="Model" />
+        <button
+          className={`rounded-md border px-3 py-2 text-sm ${
+            comparing
+              ? "border-indigo-500 text-indigo-300"
+              : "border-slate-700 text-slate-300 hover:border-indigo-500"
+          }`}
+          type="button"
+          onClick={() => setComparing((value) => !value)}
+        >
+          {comparing ? "Đang ở chế độ so sánh" : "So sánh hai model"}
+        </button>
       </div>
 
       <SearchBar
@@ -113,8 +153,19 @@ export default function App() {
       <ResultGrid
         items={response?.results ?? []}
         loading={loading}
-        onOpen={() => undefined}
+        onOpen={setSelected}
       />
+
+      {comparing && (
+        <CompareView
+          spaces={spaces}
+          defaultLeft={COMPARE_DEFAULT_LEFT}
+          defaultRight={COMPARE_DEFAULT_RIGHT}
+          params={params}
+        />
+      )}
+
+      <DetailModal item={selected} onClose={() => setSelected(null)} onFindSimilar={findSimilar} />
     </main>
   );
 }
