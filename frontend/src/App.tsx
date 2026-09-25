@@ -17,10 +17,19 @@ const DEFAULT_PARAMS: AdvancedParams = {
   filters: { categories: [], supercategories: [] },
 };
 
+/**
+ * Placeholder initial value for `space` before `fetchSpaces()` resolves.
+ * Overwritten almost immediately by the first `ready` space returned by the
+ * API (see the `firstReady` logic below) — never relied on for an actual
+ * search. Named here instead of inlined so it isn't a bare string literal
+ * duplicated at the call site.
+ */
+const DEFAULT_SPACE = "clip-b32";
+
 export default function App() {
   const [spaces, setSpaces] = useState<SpaceInfo[]>([]);
   const [examples, setExamples] = useState<ExampleQuery[]>([]);
-  const [space, setSpace] = useState("clip-b32");
+  const [space, setSpace] = useState(DEFAULT_SPACE);
   const [params, setParams] = useState<AdvancedParams>(DEFAULT_PARAMS);
   const [bootError, setBootError] = useState<string | null>(null);
   const { response, loading, error, runText, runImage } = useSearch();
