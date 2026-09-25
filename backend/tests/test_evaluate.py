@@ -140,14 +140,40 @@ def test_ann_sweep_refuses_to_run_in_embedded_mode(ctx, caption_queries):
 
 
 def test_ann_sweep_reports_overlap_against_exact(settings, corpus, factory,
-                                                 caption_queries):
+                                                 caption_queries, monkeypatch):
     server_like = settings.model_copy(update={"qdrant_mode": "server"})
     store = VectorStore(server_like, client=QdrantClient(location=":memory:"))
     build_space("clip-b32", server_like, store, corpus, encoder_factory=factory)
+    # QdrantClient(location=":memory:") is Qdrant's *local* mode: it never
+    # builds a real HNSW graph and always reports indexed_vectors_count=0
+    # (see qdrant_client/local/local_collection.py), regardless of
+    # `qdrant_mode="server"` above. That's fine for exercising the overlap
+    # computation itself, but it would trip the new C1 guard below, which is
+    # specifically there to catch this exact "collection exists but HNSW
+    # never got built" condition on a *real* server. Fake a fully-indexed
+    # collection so this test still isolates what it means to test.
+    monkeypatch.setattr(store, "indexing_status", lambda name: (4, 4))
     context = EvalContext(server_like, store, corpus, encoder_factory=factory)
     rows = eval_ann_sweep(context, "clip-b32", caption_queries, efs=(16, 64), k=2)
     assert [r["hnsw_ef"] for r in rows] == [16, 64]
     assert all(0.0 <= r["overlap@2"] <= 1.0 for r in rows)
+
+
+def test_ann_sweep_refuses_when_hnsw_never_got_built(settings, corpus, factory,
+                                                      caption_queries, monkeypatch):
+    """Guard for C1: a collection can be in "server" mode and still have
+    never built HNSW, if it never crossed Qdrant's `indexing_threshold`
+    (the exact bug the final review found live). `indexed_vectors_count !=
+    points_count` must refuse loudly instead of silently measuring exact vs
+    exact and calling it ANN vs exact.
+    """
+    server_like = settings.model_copy(update={"qdrant_mode": "server"})
+    store = VectorStore(server_like, client=QdrantClient(location=":memory:"))
+    build_space("clip-b32", server_like, store, corpus, encoder_factory=factory)
+    monkeypatch.setattr(store, "indexing_status", lambda name: (4, 0))
+    context = EvalContext(server_like, store, corpus, encoder_factory=factory)
+    with pytest.raises(RuntimeError, match="HNSW"):
+        eval_ann_sweep(context, "clip-b32", caption_queries, efs=(16,), k=2)
 
 
 def test_language_axis_scores_both_spaces_on_both_languages(ctx, settings):

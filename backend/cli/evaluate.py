@@ -267,6 +267,11 @@ def eval_ann_sweep(
 
     :raises RuntimeError: nếu đang ở chế độ embedded — chế độ đó luôn brute
         force và bỏ qua HNSW, nên mọi con số thu được sẽ là exact đội lốt ANN.
+        Cũng raise nếu collection tồn tại nhưng chưa build xong HNSW (xem
+        finding C1 của final review): Qdrant chỉ build HNSW khi một segment
+        vượt ``indexing_threshold`` mặc định (20000 KB) — 5.000 vector nhỏ
+        không bao giờ chạm ngưỡng đó nên có thể "server mode" thật nhưng vẫn
+        đang full-scan, một cách lặng lẽ hơn cách embedded-mode gây ra.
     """
     if ctx.settings.qdrant_mode != "server":
         raise RuntimeError(
@@ -275,6 +280,17 @@ def eval_ann_sweep(
         )
     space = get_space(space_name)
     collection = collection_name(space, ctx.settings)
+    points, indexed = ctx.store.indexing_status(collection)
+    if points > 0 and indexed != points:
+        raise RuntimeError(
+            f"Collection '{collection}' chưa build xong HNSW "
+            f"(indexed_vectors_count={indexed}/{points}). Trục ANN vs exact cần "
+            "index đã build đầy đủ, nếu không mọi 'ANN' thực chất là full-scan "
+            "(exact đội lốt ANN). Chạy update_collection với optimizer_config="
+            "OptimizersConfigDiff(indexing_threshold=1) (KHÔNG phải 0 — 0 là "
+            "sentinel tắt hẳn indexing) rồi đợi tới khi indexed_vectors_count "
+            "== points_count trước khi chạy lại."
+        )
     texts = [text for text, _ in queries]
     gold = [image_id for _, image_id in queries]
     vectors = text_vectors(ctx, space_name, texts, "captions")

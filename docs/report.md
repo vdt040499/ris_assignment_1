@@ -241,24 +241,70 @@ chung.
 
 ### 4.5 Trục 4 — ANN (HNSW) vs exact (`results/axis4_ann.md`)
 
-Sweep `hnsw_ef` ∈ {16, 64, 128, 256} trên 5.000 vector, `k=10`, so với baseline
-exact.
+**Sự cố đã sửa trước khi đọc bảng này.** Bản trước của mục này đo trên một
+collection mà Qdrant **chưa từng build HNSW thật**: `indexed_vectors_count`
+trên server sống là `0` cho cả 7 collection (`optimizer_config.indexing_threshold`
+mặc định là 20.000 KB, trong khi 5.000 vector 512-chiều chia trên 8 segment chỉ
+~1,25MB/segment — không bao giờ chạm ngưỡng), nên mọi truy vấn gắn nhãn "ANN"
+thực chất là full-scan so với chính nó (exact đội lốt ANN). Đã sửa theo hai
+bước:
+1. `VectorStore.ensure_collection` (`backend/app/vectordb.py`) nay tạo
+   collection mới với `optimizers_config=OptimizersConfigDiff(indexing_threshold=1)`.
+   **Lưu ý:** giá trị đúng là `1`, không phải `0` — theo đúng docstring của
+   chính field này trong `qdrant-client` ("To disable vector indexing, set to
+   0"), `0` là sentinel **tắt hẳn** indexing, xác nhận thực nghiệm bằng cách đặt
+   0 rồi đợi 10+ phút: `indexed_vectors_count` đứng yên ở 0 và
+   `/telemetry` báo `optimizations.count = 0` cho mọi collection. `1` (KB) nhỏ
+   hơn một vector 512-chiều nên mọi segment có dữ liệu đều vượt ngưỡng ngay.
+2. 7 collection cũ (build trước khi có default trên) được ép build lại HNSW
+   bằng `client.update_collection(name, optimizer_config=OptimizersConfigDiff(indexing_threshold=1))`,
+   xác nhận xong khi `indexed_vectors_count == points_count` cho cả 7 (bao gồm
+   `coco_cap_clip_b32`, 25.014 point) — kiểm bằng `GET /collections/<name>` và
+   bằng chính có tồn tại thư mục `vector_index/` (chứa `hnsw_config.json`)
+   trong từng segment trên đĩa.
+3. `eval_ann_sweep` (`backend/cli/evaluate.py`) nay raise `RuntimeError` ngay
+   nếu `indexed_vectors_count != points_count` của collection — lỗi này không
+   còn có thể tái diễn một cách âm thầm. Guard này đã được xác nhận bắt đúng
+   lỗi trên chính server thật, ngay trước khi sửa xong bước 2 ở trên (log lỗi
+   thật, không phải giả lập):
+   `RuntimeError: Collection 'coco_clip_b32' chưa build xong HNSW (indexed_vectors_count=0/5000)...`
+
+Sweep `hnsw_ef` ∈ {16, 64, 128, 256} trên 5.000 vector thật đã index xong
+(`indexed_vectors_count = 5000 = points_count`), `k=10`, so với baseline exact.
 
 | space | hnsw_ef | overlap@10 | R@1 | search_ms_p50 | search_ms_p95 |
 |---|---|---|---|---|---|
-| clip-b32 | 16 | 1.0 | 0.3138 | 3.459 | 49.359 |
-| clip-b32 | 64 | 1.0 | 0.3138 | 3.424 | 49.386 |
-| clip-b32 | 128 | 1.0 | 0.3138 | 3.431 | 49.221 |
-| clip-b32 | 256 | 1.0 | 0.3138 | 3.438 | 49.23 |
+| clip-b32 | 16 | 1.0 | 0.3138 | 3.303 | 49.228 |
+| clip-b32 | 64 | 1.0 | 0.3138 | 3.347 | 49.578 |
+| clip-b32 | 128 | 1.0 | 0.3138 | 3.341 | 49.317 |
+| clip-b32 | 256 | 1.0 | 0.3138 | 3.412 | 49.373 |
 
-**Đọc bảng.** `overlap@10 = 1.0` ở **mọi** giá trị `hnsw_ef`, kể cả `ef=16`
-thấp nhất — HNSW trả về chính xác cùng tập kết quả với exact search trên quy
-mô 5.000 vector, và latency p50/p95 giữa các cấu hình gần như không khác biệt
-(dao động trong khoảng đo nhiễu, 3.42–3.46ms). Kết luận đúng như dự đoán ở §6.2
-spec: **ở quy mô 5.000 vector, ANN không đáng dùng** — nó không nhanh hơn
-exact và không đánh đổi được gì, vì toàn bộ index đủ nhỏ để exact search đã
-nhanh sẵn. ANN sẽ có lý do tồn tại ở quy mô lớn hơn nhiều (hàng triệu vector),
-ngoài phạm vi corpus này.
+**Đọc bảng — số liệu không đổi so với trước, nhưng giờ có ý nghĩa thật.**
+`overlap@10 = 1.0` ở mọi `hnsw_ef` và latency không đổi theo `ef`, **giống hệt**
+kết quả đo được khi collection còn chưa index — nhưng lần này con số phản ánh
+đúng cái nó tuyên bố đo: HNSW *đã tồn tại thật* (`indexed_vectors_count =
+points_count`, xác nhận độc lập bằng file `vector_index/hnsw_config.json` trên
+đĩa) và truy vấn với `exact=False` vẫn cho kết quả giống hệt exact. Lý do kỹ
+thuật xác định được, không phải phỏng đoán: collection này có 8 segment, mỗi
+segment ~625 point (5.000/8), trong khi
+`hnsw_config.full_scan_threshold = 10.000` (mặc định) — tức Qdrant tự chọn
+full-scan cho bất kỳ segment nào có ít hơn 10.000 point, **bất kể** cờ
+`exact`/`hnsw_ef` truyền vào. Với 625 « 10.000, cả 8 segment đều rơi vào
+nhánh full-scan này, nên dù đồ thị HNSW có tồn tại, nó không được dùng để trả
+lời truy vấn ở quy mô hiện tại. Đây là một tham số **khác** với
+`indexing_threshold` đã sửa ở trên (một cái quyết định có *build* đồ thị hay
+không, cái kia quyết định có *dùng* đồ thị đã build khi tìm hay không) —
+không nằm trong phạm vi sửa của C1 (thay đổi nó sẽ ảnh hưởng hành vi search
+mặc định của toàn hệ, ngoài phạm vi finding này).
+
+Kết luận **thực chất không đổi so với bản trước, nhưng nay được xác minh đúng
+cách thay vì dựa trên một index chưa từng tồn tại**: ở quy mô 5.000 vector
+chia trên 8 segment nhỏ như thiết lập hiện tại của dự án, ANN không mang lại
+khác biệt nào so với exact — không phải vì "corpus nhỏ nên hai thuật toán tình
+cờ giống nhau", mà vì cơ chế heuristic full-scan-cho-segment-nhỏ của chính
+Qdrant khiến engine dùng full-scan cho cả hai trường hợp. ANN sẽ có lý do tồn
+tại ở quy mô lớn hơn nhiều (hàng triệu vector, đủ để mỗi segment vượt
+`full_scan_threshold`), ngoài phạm vi corpus này.
 
 ### 4.6 Trục 5 — Ngôn ngữ, Anh vs Việt (`results/axis5_language.md`)
 

@@ -82,10 +82,15 @@ mà không phải tự nghĩ lại kịch bản.
 - Đặt **`hnsw_ef = 16`**.
 - Bấm tìm kiếm lại với cùng query ở nhịp 5 (hoặc một query bất kỳ).
 - Nói: "Tắt exact và hạ `hnsw_ef` xuống mức thấp nhất bật chế độ tìm kiếm gần
-  đúng (ANN/HNSW). Trên quy mô 5.000 ảnh của corpus này, bảng
-  `results/axis4_ann.md` cho thấy `overlap@10 = 1.0` ở mọi mức `hnsw_ef` kể cả
-  16 — nghĩa là kết quả không đổi, và độ trễ cũng không khác biệt đáng kể so
-  với exact search. Ở quy mô này, ANN không mang lại lợi ích rõ rệt."
+  đúng (ANN/HNSW) — trên một collection đã thật sự build xong HNSW
+  (`indexed_vectors_count = points_count`, xác nhận lại trong đợt sửa lỗi gần
+  nhất, xem `docs/report.md` §4.5). Bảng `results/axis4_ann.md` cho thấy
+  `overlap@10 = 1.0` ở mọi mức `hnsw_ef` kể cả 16 — kết quả không đổi và độ trễ
+  cũng không khác biệt đáng kể so với exact search. Lý do xác định được: mỗi
+  segment của collection này chỉ có khoảng 625 vector, dưới
+  `full_scan_threshold` mặc định của Qdrant (10.000), nên engine tự chọn
+  full-scan cho cả hai trường hợp — HNSW dù tồn tại thật vẫn không được dùng
+  ở quy mô này. Ở quy mô này, ANN không mang lại lợi ích rõ rệt."
 - (Nếu muốn nhấn mạnh bằng số cụ thể: đọc to `latency_ms` hiển thị trên UI ở
   cả hai lần chạy — exact và ANN — để người xem tự so sánh trực tiếp.)
 
