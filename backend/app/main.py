@@ -145,9 +145,9 @@ def create_app(
     @app.post("/search/image", response_model=SearchResponse)
     async def search_image(
         space: str = Form(...),
-        k: int | None = Form(default=None),
+        k: int | None = Form(default=None, ge=1),
         exact: bool = Form(default=True),
-        hnsw_ef: int | None = Form(default=None),
+        hnsw_ef: int | None = Form(default=None, ge=1),
         filters_json: str | None = Form(default=None),
         image_id: int | None = Form(default=None),
         file: UploadFile | None = File(default=None),

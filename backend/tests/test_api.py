@@ -173,6 +173,28 @@ def test_upload_above_the_size_limit_is_413(client, settings):
     assert response.status_code == 413
 
 
+def test_image_search_k_zero_is_422_not_503(client):
+    """Finding I5: k<=0 phải là 422 (tham số sai), không phải 503 ("Qdrant
+    down") — trước khi có ``ge=1`` ở Form, k=0 lọt xuống tận Qdrant, bị
+    UnexpectedResponse 4xx, và bị vectordb.py hiểu nhầm thành mất kết nối.
+    """
+    response = client.post("/search/image", data={"space": "clip-b32", "k": "0"})
+    assert response.status_code == 422
+
+
+def test_image_search_negative_k_is_422(client):
+    response = client.post("/search/image", data={"space": "clip-b32", "k": "-1"})
+    assert response.status_code == 422
+
+
+def test_image_search_hnsw_ef_zero_is_422(client):
+    response = client.post(
+        "/search/image",
+        data={"space": "clip-b32", "image_id": "1", "exact": "false", "hnsw_ef": "0"},
+    )
+    assert response.status_code == 422
+
+
 def test_malformed_filters_json_is_422(client):
     response = client.post(
         "/search/image",

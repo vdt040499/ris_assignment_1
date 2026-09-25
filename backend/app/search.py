@@ -60,9 +60,17 @@ class SearchService:
     def _resolve_k(self, k: int | None) -> int:
         """Áp mặc định và trần cấu hình cho top-k.
 
-        :raises ValidationRangeError: nếu k vượt ``MAX_TOP_K``.
+        :raises ValidationRangeError: nếu k <= 0 hoặc vượt ``MAX_TOP_K``.
         """
         resolved = self.settings.top_k_default if k is None else k
+        # Tầng HTTP (`Form(..., ge=1)` cho /search/image, `Field(ge=1)` cho
+        # TextSearchRequest) đã chặn k<=0 trước khi tới đây, nhưng service này
+        # cũng được gọi trực tiếp (CLI, test) mà không qua tầng đó — kiểm tra
+        # lại ở đây để k<=0 luôn thành 422 (ValidationRangeError), không bao
+        # giờ lọt xuống Qdrant rồi bị hiểu nhầm thành "Qdrant is down" (finding
+        # I5).
+        if resolved <= 0:
+            raise ValidationRangeError(f"k={resolved} phải >= 1")
         if resolved > self.settings.max_top_k:
             raise ValidationRangeError(
                 f"k={resolved} vượt giới hạn MAX_TOP_K={self.settings.max_top_k}"

@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
 from qdrant_client import QdrantClient
+from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 
 from app.config import Settings
+from app.errors import VectorStoreDownError
 from app.vectordb import Hit, VectorStore, build_filter
 
 COLLECTION = "test_images"
@@ -106,3 +108,78 @@ def test_health_reports_ok_for_a_live_client(store):
 
 def test_mode_reflects_settings(store):
     assert store.mode == "embedded"
+
+
+class _RaisingClient:
+    """Fake client thô: mọi phương thức được gọi ném đúng ``exc`` cho trước.
+
+    Dùng để kiểm chứng finding I5 mà không cần một Qdrant thật trả lỗi 4xx/5xx
+    thật: ``UnexpectedResponse`` mang theo ``status_code`` giả lập trực tiếp.
+    """
+
+    def __init__(self, exc: Exception) -> None:
+        self._exc = exc
+
+    def get_collections(self):
+        raise self._exc
+
+    def collection_exists(self, name):
+        raise self._exc
+
+    def get_collection(self, name):
+        raise self._exc
+
+    def query_points(self, **kwargs):
+        raise self._exc
+
+
+def _unexpected(status_code):
+    return UnexpectedResponse(
+        status_code=status_code, reason_phrase="", content=b"{}", headers={}
+    )
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        OSError("no route to host"),
+        ResponseHandlingException("boom"),
+        _unexpected(500),
+        _unexpected(503),
+        _unexpected(None),
+    ],
+)
+def test_transport_and_5xx_failures_are_reported_as_qdrant_down(exc):
+    """Lỗi transport thật và 5xx đều là Qdrant "down" — 503 ở tầng HTTP."""
+    settings = Settings(_env_file=None, qdrant_mode="server")
+    store = VectorStore(settings, client=_RaisingClient(exc))
+    assert store.health() == "down"
+    with pytest.raises(VectorStoreDownError):
+        store.collection_exists("any")
+    with pytest.raises(VectorStoreDownError):
+        store.indexing_status("any")
+    with pytest.raises(VectorStoreDownError):
+        store.search("any", np.zeros(4, dtype=np.float32), k=1)
+
+
+def test_health_returns_down_string_on_5xx_without_raising():
+    settings = Settings(_env_file=None, qdrant_mode="server")
+    store = VectorStore(settings, client=_RaisingClient(_unexpected(500)))
+    assert store.health() == "down"
+
+
+@pytest.mark.parametrize("status_code", [400, 404, 422])
+def test_4xx_unexpected_response_is_not_mistaken_for_down(status_code):
+    """Finding I5: Qdrant sống và trả lời (4xx = từ chối request), không phải
+    downtime — không được thành ``VectorStoreDownError`` (503 gây hiểu lầm
+    "docker compose up -d qdrant" trong khi Qdrant vẫn chạy bình thường).
+    """
+    settings = Settings(_env_file=None, qdrant_mode="server")
+    exc = _unexpected(status_code)
+    store = VectorStore(settings, client=_RaisingClient(exc))
+    with pytest.raises(UnexpectedResponse):
+        store.search("any", np.zeros(4, dtype=np.float32), k=1)
+    with pytest.raises(UnexpectedResponse):
+        store.collection_exists("any")
+    with pytest.raises(UnexpectedResponse):
+        store.indexing_status("any")
