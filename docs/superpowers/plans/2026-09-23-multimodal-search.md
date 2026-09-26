@@ -4903,7 +4903,7 @@ git commit -m "feat: sinh ba query set có seed cố định và bộ 200 query 
 
 **Interfaces:**
 - Consumes: `Settings`, `Corpus`, `VectorStore`, `build_encoder`, `Bm25Retriever`, `metrics.*`, registry, `build_index.image_vectors` (không dùng — eval chỉ đọc), `l2_normalize`.
-- Produces: `T2I_SAMPLE_DEFAULT = 5000`, `PROMPT_TEMPLATES: tuple[str | None, ...]`, `ANN_EF_VALUES: tuple[int, ...]`, `EvalContext(settings, store, corpus, encoder_factory=build_encoder)`, `text_vectors(ctx, space_name, texts, cache_key) -> np.ndarray`, `search_many(ctx, collection, vectors, k, exact=True, hnsw_ef=None) -> tuple[list[list[int]], list[float]]`, `eval_text2image(ctx, space_name, queries: list[tuple[str, int]], ks=(1, 5, 10), exact=True, hnsw_ef=None, cache_key="captions", prompt_template=None) -> dict`, `eval_image2image(ctx, space_name, image_ids: list[int], k=10) -> dict`, `eval_short_queries(ctx, space_name, k=10, prompt_template=None) -> dict`, `eval_ann_sweep(ctx, space_name, queries, efs=ANN_EF_VALUES, k=10) -> list[dict]`, `eval_language(ctx, space_names: list[str], k=(1, 5, 10)) -> list[dict]`, `write_table(rows: list[dict], name: str, settings, title: str) -> None`, `main(argv) -> int`.
+- Produces: `T2I_SAMPLE_DEFAULT = 5000`, `PROMPT_TEMPLATES: tuple[str | None, ...]`, `ANN_EF_VALUES: tuple[int, ...]`, `EvalContext(settings, store, corpus, encoder_factory=build_encoder)`, `text_vectors(ctx, space_name, texts, cache_key) -> np.ndarray`, `search_many(ctx, collection, vectors, k, exact=True, hnsw_ef=None) -> tuple[list[list[int]], list[float]]`, `eval_text2image(ctx, space_name, queries: list[tuple[str, int]], ks=(1, 5, 10), exact=True, hnsw_ef=None, cache_key="captions", prompt_template=None) -> dict`, `eval_image2image(ctx, space_name, image_ids: list[int], k=10) -> dict`, `eval_short_queries(ctx, space_name, k=10, prompt_template=None, cache_key="short_raw") -> dict`, `eval_ann_sweep(ctx, space_name, queries, efs=ANN_EF_VALUES, k=10) -> list[dict]`, `eval_language(ctx, space_names: list[str], k=(1, 5, 10)) -> list[dict]`, `write_table(rows: list[dict], name: str, settings, title: str) -> None`, `main(argv) -> int`.
 
 - [ ] **Step 1: Viết test thất bại**
 
@@ -5260,9 +5260,19 @@ def eval_image2image(
 
 
 def eval_short_queries(
-    ctx: EvalContext, space_name: str, k: int = 10, prompt_template: str | None = None
+    ctx: EvalContext,
+    space_name: str,
+    k: int = 10,
+    prompt_template: str | None = None,
+    cache_key: str = "short_raw",
 ) -> dict:
-    """P@k trên bộ query ngắn kiểu từ khoá; đúng = ảnh chứa category của query."""
+    """P@k trên bộ query ngắn kiểu từ khoá; đúng = ảnh chứa category của query.
+
+    :param cache_key: phải phân biệt từng template. Không dùng ``hash()`` của
+        template để sinh khoá: hash của chuỗi trong Python được ngẫu nhiên hoá
+        theo từng process, nên tên file cache sẽ đổi mỗi lần chạy — cache không
+        bao giờ trúng, và tệ hơn là tên file không tất định.
+    """
     entries = json.loads(
         (ctx.settings.data_dir / "queryset_short.json").read_text(encoding="utf-8")
     )
@@ -5271,7 +5281,6 @@ def eval_short_queries(
         prompt_template.format(e["query"]) if prompt_template else e["query"]
         for e in entries
     ]
-    cache_key = f"short_{abs(hash(prompt_template or 'raw'))}"
     vectors = text_vectors(ctx, space_name, texts, cache_key)
     rankings, latencies = search_many(
         ctx, collection_name(space, ctx.settings), vectors, k=k
@@ -5453,12 +5462,13 @@ def main(argv: list[str] | None = None) -> int:
                     title="Trục 2 — cosine trên vector normalize vs dot trên vector thô")
     if "prompt" in wanted:
         rows = []
-        for template in PROMPT_TEMPLATES:
+        for index, template in enumerate(PROMPT_TEMPLATES):
             rows.append(eval_text2image(ctx, "clip-b32", queries,
-                                        cache_key=f"tmpl_{PROMPT_TEMPLATES.index(template)}",
+                                        cache_key=f"tmpl_{index}",
                                         prompt_template=template))
             rows.append(eval_short_queries(ctx, "clip-b32", k=args.k,
-                                           prompt_template=template))
+                                           prompt_template=template,
+                                           cache_key=f"short_{index}"))
         write_table(rows, "axis3_prompt", settings,
                     title="Trục 3 — prompt template trên caption dài và trên query ngắn")
     if "ann" in wanted:
@@ -5766,9 +5776,13 @@ export interface SearchParams {
 `frontend/src/api/client.test.ts`:
 
 ```ts
+import { File } from "node:buffer";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, apiUrl, searchImage, searchText } from "./client";
+
+// `File` chỉ thành global từ Node 20; máy này chạy Node 18 nên phải import
+// tường minh từ node:buffer, nếu không test đổ ReferenceError.
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

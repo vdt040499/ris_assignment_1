@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+pythonpath = ["backend", "."]
+testpaths = ["backend/tests"]
+markers = ["integration: cần model thật hoặc Qdrant server đang chạy"]
+addopts = "-m 'not integration' -q"

@@ -1,0 +1,10 @@
+data/*
+!data/queryset_vi.json
+!data/queryset_i2i.json
+!data/queryset_short.json
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/node_modules/
+frontend/dist/

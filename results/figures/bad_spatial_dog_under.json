@@ -1,0 +1,222 @@
+{
+  "results": [
+    {
+      "image_id": 486479,
+      "file_name": "000000486479.jpg",
+      "thumb_url": "/thumbs/000000486479.jpg",
+      "score": 0.30301547,
+      "captions": [
+        "A large white dog laying underneath a bed.",
+        "A white dog is peeking out from under a hanging cloth.",
+        "White dog sticking his nose out from under red and white striped bed ruffle.",
+        "A dog peeking out from under some covers.",
+        "A dog is on the floor hiding under a curtain."
+      ],
+      "categories": [
+        "bed",
+        "dog"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 540928,
+      "file_name": "000000540928.jpg",
+      "thumb_url": "/thumbs/000000540928.jpg",
+      "score": 0.2720822,
+      "captions": [
+        "There is a room with distinctive things in the picture.",
+        "A cat that is standing on a wood floor.",
+        "A cat is walking past a chair.",
+        "A cat walking on the wood floor beside a chair",
+        "A rocking chair with a cat walking past."
+      ],
+      "categories": [
+        "cat",
+        "chair"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 320554,
+      "file_name": "000000320554.jpg",
+      "thumb_url": "/thumbs/000000320554.jpg",
+      "score": 0.2714597,
+      "captions": [
+        "A black cat laying in the sun under a bench",
+        "A black cat sitting under a park bench.",
+        "A black cat sits beneath a bench in the sun.",
+        "A cat sits under a park bench outside.",
+        "There is a cat lying in the sun by the bench."
+      ],
+      "categories": [
+        "bench",
+        "cat"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 432553,
+      "file_name": "000000432553.jpg",
+      "thumb_url": "/thumbs/000000432553.jpg",
+      "score": 0.2674622,
+      "captions": [
+        "A couple of dogs viewing something as a person sits in a chair.",
+        "A person sitting on a seat on a bus next to brown dogs.",
+        "A bike, two dogs and a man sitting on public transportation.",
+        "The view of two dogs inside a bus.",
+        "Two dogs in the aisle of a bus next to a bicycle."
+      ],
+      "categories": [
+        "bench",
+        "bicycle",
+        "dog",
+        "person"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 367195,
+      "file_name": "000000367195.jpg",
+      "thumb_url": "/thumbs/000000367195.jpg",
+      "score": 0.26566273,
+      "captions": [
+        "A dog laying down on a fluffy carpet",
+        "Floor eye view of a supine dog hoping for some attention.",
+        "A brown and white dog laying on a carpet under a table.",
+        "A Corgi dog resting on frizzy beige carpet",
+        "A picture of a dog laying under a table on the rug."
+      ],
+      "categories": [
+        "couch",
+        "dog",
+        "person"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 446522,
+      "file_name": "000000446522.jpg",
+      "thumb_url": "/thumbs/000000446522.jpg",
+      "score": 0.26167792,
+      "captions": [
+        "A dog sitting on a chair underneath a painting.",
+        "A black and brown large dog sits on an upholstered chair.",
+        "A dog is sitting on an armchair next to a fridge.",
+        "A dog relaxes on an armchair in a living room.",
+        "A black and brown dog sits curled in a flowered wing chair."
+      ],
+      "categories": [
+        "chair",
+        "dining table",
+        "dog",
+        "refrigerator"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 399560,
+      "file_name": "000000399560.jpg",
+      "thumb_url": "/thumbs/000000399560.jpg",
+      "score": 0.2571069,
+      "captions": [
+        "a small kitten inside of a laptop on the floor",
+        "There is a cat lying down on something.",
+        "A cat is sitting in a partially closed laptop.",
+        "A photo of a cat laying on a laptop.",
+        "A small cat is standing on a table"
+      ],
+      "categories": [
+        "cat",
+        "laptop"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 329219,
+      "file_name": "000000329219.jpg",
+      "thumb_url": "/thumbs/000000329219.jpg",
+      "score": 0.25698933,
+      "captions": [
+        "A man standing next to a dog on the ground.",
+        "A man is at a kitchen counter by a dog.",
+        "An man standing in a kitchen with a small puppy.",
+        "there is a small puppy on the kitchen floor",
+        "A man in the kitchen standing with his dog."
+      ],
+      "categories": [
+        "cup",
+        "dog",
+        "fork",
+        "knife",
+        "person",
+        "sink",
+        "spoon"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 145781,
+      "file_name": "000000145781.jpg",
+      "thumb_url": "/thumbs/000000145781.jpg",
+      "score": 0.25683814,
+      "captions": [
+        "A dog licking the top of a  beer bottle",
+        "A dog drinks from a bottle of Guiness.",
+        "A dog laying on the floor with it's mouth on a bottle of beer.",
+        "A black dog laying on the floor sitting alcohol from a bottle.",
+        "a dog laying on the carpet licking a bottle."
+      ],
+      "categories": [
+        "bottle",
+        "dog"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 283412,
+      "file_name": "000000283412.jpg",
+      "thumb_url": "/thumbs/000000283412.jpg",
+      "score": 0.25594282,
+      "captions": [
+        "A little poodle puppy laying near a newspaper with a look of guilt.",
+        "a white dog sitting on a table next to a newspaper and a cup.",
+        "A dog sitting on a table next to a newspaper and a cup.",
+        "A white dog sitting on a table next to a paper.",
+        "a close up of a dog next to a news paper on a table"
+      ],
+      "categories": [
+        "bed",
+        "cup",
+        "dog"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 27.67489998950623,
+  "encode_ms": 18.560399999842048,
+  "search_ms": 4.554000013740733,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a dog under a table"
+}

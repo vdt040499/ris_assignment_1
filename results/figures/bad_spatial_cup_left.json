@@ -1,0 +1,234 @@
+{
+  "results": [
+    {
+      "image_id": 409630,
+      "file_name": "000000409630.jpg",
+      "thumb_url": "/thumbs/000000409630.jpg",
+      "score": 0.3127815,
+      "captions": [
+        "A computer keyboard sitting next to a mouse.",
+        "A wireless keyboard and mouse are sitting next to a laptop.",
+        "A thin keyboard and mouse sitting in front of a laptop.",
+        "a keyboard and a mouse sit in front of a laptop",
+        "Laptop computer with wireless keyboard and mouse on table."
+      ],
+      "categories": [
+        "keyboard",
+        "mouse"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 63602,
+      "file_name": "000000063602.jpg",
+      "thumb_url": "/thumbs/000000063602.jpg",
+      "score": 0.3041873,
+      "captions": [
+        "A laptop computer sitting on top of a white desk.",
+        "A black laptop at a desk with a printer.",
+        "A laptop computer is displaying a screen with words.",
+        "A laptop seems to have the infamous \"blue screen of death\" on the desk.",
+        "A computer sits on a desk by a printer."
+      ],
+      "categories": [
+        "book",
+        "cup",
+        "laptop"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 226171,
+      "file_name": "000000226171.jpg",
+      "thumb_url": "/thumbs/000000226171.jpg",
+      "score": 0.29132792,
+      "captions": [
+        "A computer monitor sitting above a computer keyboard.",
+        "A sunny office desk with computer, laptop and phone",
+        "a bottle a cup a keyboard a laptop and a monitor",
+        "A monitor, keyboard, coffee cup, and plastic bottle sit on a table.",
+        "A desk with a computer, computer keyboard, mug, empty plastic bottle, red pen, and a laptop."
+      ],
+      "categories": [
+        "bottle",
+        "cell phone",
+        "cup",
+        "keyboard",
+        "laptop",
+        "tv"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 1503,
+      "file_name": "000000001503.jpg",
+      "thumb_url": "/thumbs/000000001503.jpg",
+      "score": 0.2903728,
+      "captions": [
+        "A computer on a desk next to a laptop.",
+        "A picture of an iMac desktop next to a Mac laptop on a desk.",
+        "Two apple computers are on a white desk",
+        "A laptop and desktop computer on a white desk",
+        "A computer desk with several pieces of computer equipment."
+      ],
+      "categories": [
+        "keyboard",
+        "laptop",
+        "mouse",
+        "tv"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 324715,
+      "file_name": "000000324715.jpg",
+      "thumb_url": "/thumbs/000000324715.jpg",
+      "score": 0.28986377,
+      "captions": [
+        "An apple computer is on a table with supplies.",
+        "A white Macintosh next to duct tape and red scissors.",
+        "A laptop computer sits near a roll of tape and a laptop computer.",
+        "A picture of a computer and some items on the table.",
+        "A laptop computer sits on a desk with scissors."
+      ],
+      "categories": [
+        "laptop",
+        "scissors"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 59598,
+      "file_name": "000000059598.jpg",
+      "thumb_url": "/thumbs/000000059598.jpg",
+      "score": 0.28521422,
+      "captions": [
+        "A table topped with a laptop computer next to a plate of food.",
+        "A table with a laptop a plate with a muffin and a banana, a can and a cellphone.",
+        "a laptop on top of a table with a plate with food next to it.",
+        "A soda, banana and muffin are set near a laptop.",
+        "TABLE WITH A PLATE OF FOOD A DRINK, CELL PHONE AND A COMPUTER"
+      ],
+      "categories": [
+        "banana",
+        "cake",
+        "cell phone",
+        "chair",
+        "keyboard",
+        "laptop",
+        "mouse",
+        "person"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 335658,
+      "file_name": "000000335658.jpg",
+      "thumb_url": "/thumbs/000000335658.jpg",
+      "score": 0.2847824,
+      "captions": [
+        "A keyboard and mouse sitting on a desk.",
+        "A mouse and a keyboard on top of a desk",
+        "Thee computer keyboard is white and it has a matching white mouse.",
+        "On a desk sits a keyboard and mouse.",
+        "A desktop with a white mouse and keyboard."
+      ],
+      "categories": [
+        "keyboard",
+        "mouse"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 46031,
+      "file_name": "000000046031.jpg",
+      "thumb_url": "/thumbs/000000046031.jpg",
+      "score": 0.28285003,
+      "captions": [
+        "A laptop and a desktop computer sitting on a table.",
+        "A laptop and computer monitor with the same screen.",
+        "A laptop that is sitting near a mouse.",
+        "A laptop screen displays an image of bright green leaves.",
+        "A small tablet computer next to a larger monitor and keyboard."
+      ],
+      "categories": [
+        "cell phone",
+        "keyboard",
+        "laptop",
+        "mouse",
+        "tv"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 278463,
+      "file_name": "000000278463.jpg",
+      "thumb_url": "/thumbs/000000278463.jpg",
+      "score": 0.27942425,
+      "captions": [
+        "A laptop and planner sitting on a cluttered desk.",
+        "A wooden desk that is very cluttered with items.",
+        "A cat sleeping on a desk next to an open laptop.",
+        "A quite cluttered desk with a lap and many other office material, plus a cat.",
+        "A view of a laptop sitting on a desk with clutter around it."
+      ],
+      "categories": [
+        "book",
+        "bottle",
+        "cat",
+        "cell phone",
+        "cup",
+        "laptop",
+        "potted plant"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 546626,
+      "file_name": "000000546626.jpg",
+      "thumb_url": "/thumbs/000000546626.jpg",
+      "score": 0.27801263,
+      "captions": [
+        "A smart phone sitting on top sitting on top of a wooden table.",
+        "The cell phone is next to a pear, a mug, and a bottle of tea.",
+        "An apple, a phone, and a cup sitting on a table.",
+        "A cellphone, piece of fruit and cup are on the table.",
+        "A pear, cup, cell phone and paper on a table."
+      ],
+      "categories": [
+        "bottle",
+        "cell phone",
+        "cup",
+        "dining table"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 39.22820001025684,
+  "encode_ms": 30.693900014739484,
+  "search_ms": 4.359599988674745,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a cup to the left of a laptop"
+}

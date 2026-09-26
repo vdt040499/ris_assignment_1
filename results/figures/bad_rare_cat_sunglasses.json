@@ -1,0 +1,215 @@
+{
+  "results": [
+    {
+      "image_id": 23272,
+      "file_name": "000000023272.jpg",
+      "thumb_url": "/thumbs/000000023272.jpg",
+      "score": 0.27983347,
+      "captions": [
+        "A Calico cat laying on the hood of a Mercedes.",
+        "a cat is sitting on the hood of a car",
+        "a cat is sleeping on the hood of a car",
+        "A calico cat sits on  the hood of a black car.",
+        "A calico cat with eyes closed is perched upon a Mercedes."
+      ],
+      "categories": [
+        "car",
+        "cat"
+      ],
+      "rank": 1,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 210099,
+      "file_name": "000000210099.jpg",
+      "thumb_url": "/thumbs/000000210099.jpg",
+      "score": 0.2762553,
+      "captions": [
+        "An orange cat sunning itself on a lawn chair.",
+        "A cat sits on a wicker chair in the sun.",
+        "A cat sitting on a chair outside in the sun.",
+        "A cat sitting in a chair enjoying the sun.",
+        "A cat sitting on a wicker chair in the sun."
+      ],
+      "categories": [
+        "cat",
+        "chair"
+      ],
+      "rank": 2,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 80666,
+      "file_name": "000000080666.jpg",
+      "thumb_url": "/thumbs/000000080666.jpg",
+      "score": 0.27124748,
+      "captions": [
+        "A cat sitting on top of a bench in a field.",
+        "A cat sitting on a bench in front of a house",
+        "a close up of a cat sitting on a bench",
+        "a white and brown cat sitting alone on a bench",
+        "A cat sitting on a bench in front of a building."
+      ],
+      "categories": [
+        "bench",
+        "cat"
+      ],
+      "rank": 3,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 157807,
+      "file_name": "000000157807.jpg",
+      "thumb_url": "/thumbs/000000157807.jpg",
+      "score": 0.27006137,
+      "captions": [
+        "a cat that is standing on a toilet and next to a sink",
+        "A cat with a look of annoyance standing on a toilet lid.",
+        "Cat standing on a toilet seat looking at the person taking the photo.",
+        "A tabby cat standing on a closed toilet lid.",
+        "a grey striped cat sitting on top of a toilet"
+      ],
+      "categories": [
+        "cat",
+        "sink",
+        "toilet"
+      ],
+      "rank": 4,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 432468,
+      "file_name": "000000432468.jpg",
+      "thumb_url": "/thumbs/000000432468.jpg",
+      "score": 0.2686752,
+      "captions": [
+        "A cat sleeping on top of a closed suit case.",
+        "there is a cat laying on top of luggage",
+        "A cat sleeping on top of a suitcase",
+        "The brown cat is lying on a luggage bag.",
+        "a cat sleeping on top of a black suitcase"
+      ],
+      "categories": [
+        "cat",
+        "suitcase"
+      ],
+      "rank": 5,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 327769,
+      "file_name": "000000327769.jpg",
+      "thumb_url": "/thumbs/000000327769.jpg",
+      "score": 0.26708558,
+      "captions": [
+        "A cat lying down in a sink in a bathroom.",
+        "a cat laying in a bathroom sink while looking at the camera",
+        "A cat in a white sink looking out.",
+        "A cat curled up in a white bathroom sink.",
+        "A cat lying inside a sink with a hair brush, sanitizer and toothpaste on top"
+      ],
+      "categories": [
+        "bottle",
+        "cat",
+        "cup",
+        "sink",
+        "toilet",
+        "toothbrush"
+      ],
+      "rank": 6,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 118515,
+      "file_name": "000000118515.jpg",
+      "thumb_url": "/thumbs/000000118515.jpg",
+      "score": 0.26564792,
+      "captions": [
+        "A spotted kitten sitting on a wooden bench.",
+        "A small kitten sitting on a slatted bench.",
+        "Small kitten sitting on a small wooden table.",
+        "Small kitten sitting on top of a wooden crate.",
+        "A small kitten sitting on a pallet of wood looking back."
+      ],
+      "categories": [
+        "bench",
+        "cat"
+      ],
+      "rank": 7,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 131938,
+      "file_name": "000000131938.jpg",
+      "thumb_url": "/thumbs/000000131938.jpg",
+      "score": 0.26467556,
+      "captions": [
+        "Cat sitting up with a fake tie around it's neck.",
+        "A cat is wearing a tie and sitting on some clothes.",
+        "A cat wearing a neck tie sitting on a bed.",
+        "A cat standing on a bed and wearing a tie.",
+        "A cat wearing a tie on some cloths."
+      ],
+      "categories": [
+        "cat",
+        "tie"
+      ],
+      "rank": 8,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 304560,
+      "file_name": "000000304560.jpg",
+      "thumb_url": "/thumbs/000000304560.jpg",
+      "score": 0.26433927,
+      "captions": [
+        "A black ct with green eyes sitting in the sun.",
+        "A cat that is staring at the camera.",
+        "A black cat sitting in a field of grass.",
+        "I black cat with yellow eyes sitting in the grass.",
+        "A black cat is staring directly into the camera."
+      ],
+      "categories": [
+        "cat"
+      ],
+      "rank": 9,
+      "matched_caption": null,
+      "caption_index": null
+    },
+    {
+      "image_id": 545826,
+      "file_name": "000000545826.jpg",
+      "thumb_url": "/thumbs/000000545826.jpg",
+      "score": 0.26201075,
+      "captions": [
+        "A black and white cat that is standing on all fours and has an elephant hat on it's head.",
+        "A black cat with white paws is standing among some wooden boards and a toy.",
+        "A cat is wearing a small elephant hat.",
+        "A cat on a stool with something on its head",
+        "There is a cat wearing an elephant hat"
+      ],
+      "categories": [
+        "cat",
+        "chair"
+      ],
+      "rank": 10,
+      "matched_caption": null,
+      "caption_index": null
+    }
+  ],
+  "latency_ms": 77.77529998566024,
+  "encode_ms": 17.52590000978671,
+  "search_ms": 56.07270001200959,
+  "space": "clip-b32",
+  "exact": true,
+  "total_searched": 5000,
+  "query_echo": "a cat wearing sunglasses"
+}

@@ -1,0 +1,13 @@
+{
+  "space": "resnet50",
+  "hf_id": "microsoft/resnet-50",
+  "dim": 2048,
+  "distance": "Cosine",
+  "normalized": true,
+  "backend": "qdrant",
+  "n_points": 5000,
+  "encode_seconds": 21.04,
+  "batch_size": 32,
+  "built_at": "2026-09-24T08:40:04+00:00",
+  "git_commit": "9d477b5"
+}
