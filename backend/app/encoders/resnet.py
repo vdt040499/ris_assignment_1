@@ -1,4 +1,4 @@
-"""Baseline không multimodal: feature ImageNet của ResNet-50. Chỉ encode ảnh."""
+"""Non-multimodal baseline: ImageNet features from ResNet-50. Encodes images only."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -11,14 +11,14 @@ from app.vecutil import l2_normalize
 
 
 class ResNetEncoder:
-    """Image-only encoder dùng pooled feature 2048 chiều của ResNet-50."""
+    """Image-only encoder using the 2048-dimensional pooled feature from ResNet-50."""
 
     def __init__(self, space: SpaceSpec, device: str, batch_size: int) -> None:
-        """Khởi tạo encoder mà chưa nạp model.
+        """Initialize the encoder without loading the model yet.
 
-        :param space: khai báo space từ registry.
-        :param device: thiết bị chạy model, lấy từ ``Settings``.
-        :param batch_size: số mẫu xử lý mỗi lượt, lấy từ ``Settings``.
+        :param space: space declaration from the registry.
+        :param device: device to run the model on, taken from ``Settings``.
+        :param batch_size: number of samples processed per batch, taken from ``Settings``.
         """
         self.name = space.name
         self.dim = space.dim
@@ -29,7 +29,7 @@ class ResNetEncoder:
         self._processor: Any = None
 
     def _ensure_loaded(self) -> None:
-        """Nạp model và image processor nếu chưa nạp. Idempotent."""
+        """Load the model and image processor if not already loaded. Idempotent."""
         if self._model is not None:
             return
         from transformers import AutoImageProcessor, AutoModel
@@ -38,20 +38,20 @@ class ResNetEncoder:
         self._processor = AutoImageProcessor.from_pretrained(self._space.hf_id)
 
     def encode_texts(self, texts: Sequence[str]) -> np.ndarray:
-        """Không hỗ trợ — ResNet-50 là baseline chỉ dùng cho ảnh→ảnh.
+        """Not supported — ResNet-50 is a baseline used only for image-to-image.
 
-        :raises ModeNotSupportedError: luôn luôn.
+        :raises ModeNotSupportedError: always.
         """
         raise ModeNotSupportedError(
-            f"{self.name} là baseline chỉ dùng cho ảnh→ảnh, không encode text"
+            f"{self.name} is a baseline used only for image-to-image; it does not encode text"
         )
 
     def encode_images(self, images: Sequence[Any]) -> np.ndarray:
-        """Lấy pooled feature 2048 chiều, dàn phẳng từ shape (n, 2048, 1, 1).
+        """Extract the 2048-dimensional pooled feature, flattened from shape (n, 2048, 1, 1).
 
-        :param images: danh sách ``PIL.Image.Image``.
-        :returns: ma trận ``(len(images), dim)`` float32.
-        :raises ValueError: nếu dim thực tế khác dim khai báo trong registry.
+        :param images: list of ``PIL.Image.Image``.
+        :returns: ``(len(images), dim)`` float32 matrix.
+        :raises ValueError: if the actual dim differs from the dim declared in the registry.
         """
         if not images:
             return np.zeros((0, self.dim), dtype=np.float32)
@@ -69,6 +69,6 @@ class ResNetEncoder:
         vectors = np.concatenate(chunks, axis=0).astype(np.float32)
         if vectors.shape[1] != self.dim:
             raise ValueError(
-                f"{self.name}: model trả dim {vectors.shape[1]}, registry khai {self.dim}"
+                f"{self.name}: model returned dim {vectors.shape[1]}, registry declares {self.dim}"
             )
         return l2_normalize(vectors) if self._space.normalized else vectors

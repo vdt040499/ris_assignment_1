@@ -24,12 +24,13 @@ def factory(encoder):
 
 @pytest.fixture(autouse=True)
 def _real_image_files(mini_images_dir):
-    """`build_index._load_image` đọc file thật từ `settings.images_dir`.
+    """`build_index._load_image` reads real files from `settings.images_dir`.
 
-    Cùng lý do với fixture cùng tên ở `test_build_index.py`: `ctx` gọi
-    `build_space`, vốn cần ảnh thật trên đĩa để encode, nhưng `corpus` (từ
-    conftest.py) chỉ dựng corpus.jsonl chứ không tự sinh file ảnh. Autouse ở
-    đây để mọi test dùng `ctx` không phải tự khai báo `mini_images_dir`.
+    Same reason as the fixture of the same name in `test_build_index.py`:
+    `ctx` calls `build_space`, which needs real images on disk to encode, but
+    `corpus` (from conftest.py) only builds corpus.jsonl and does not
+    generate image files itself. Autouse here so every test using `ctx`
+    doesn't have to declare `mini_images_dir` itself.
     """
     return mini_images_dir
 
@@ -95,30 +96,33 @@ def test_image2image_uses_the_category_proxy(ctx):
 
 
 def test_image2image_reports_self_as_its_own_nearest_neighbor(ctx):
-    """self_hits đếm trên ranking THÔ (trước lọc self), nên phụ thuộc dữ liệu
-    thật chứ không phải một hằng số theo cấu trúc code.
+    """self_hits is counted on the RAW ranking (before self-filtering), so it
+    depends on the actual data rather than being a constant determined by
+    the code's structure.
 
-    FakeEncoder mã hoá ảnh 1 (80x60) thành vector one-hot chỉ số 0, khác hẳn
-    ảnh 2 và 3 — nên khi lấy chính vector ảnh 1 làm query, ảnh 1 luôn là láng
-    giềng gần nhất tuyệt đối (cosine=1.0) của chính nó trong ranking thô, và
-    self_hits phải bằng đúng 1 (không phải 0 mặc định).
+    FakeEncoder encodes image 1 (80x60) as a one-hot vector at index 0,
+    clearly distinct from images 2 and 3 — so when image 1's own vector is
+    used as the query, image 1 is always its own absolute nearest neighbor
+    (cosine=1.0) in the raw ranking, and self_hits must equal exactly 1 (not
+    the default 0).
     """
     row = eval_image2image(ctx, "clip-b32", image_ids=[1], k=2)
     assert row["self_hits"] == 1
 
 
 def test_image2image_excludes_the_query_image_from_scoring(ctx):
-    """Kiểm exclusion bằng hiệu ứng thật của nó lên P@k, không phải bằng
-    self_hits (self_hits đếm trên ranking thô — xem test phía trên — nên
-    không thể chứng minh bước lọc ``others`` có chạy hay không: một self_hits
-    đếm trên chính ``others`` đã lọc luôn ra 0 bất kể code loại trừ có đúng
-    hay không).
+    """Verify exclusion through its actual effect on P@k, not through
+    self_hits (self_hits is counted on the raw ranking — see the test above
+    — so it can't prove whether the ``others`` filtering step actually runs:
+    a self_hits counted on the already-filtered ``others`` would always come
+    out 0 regardless of whether the exclusion code is correct).
 
-    Corpus mini gán ảnh 1 categories ``{"couch", "dog"}``, không trùng ảnh 2
-    (``{"zebra"}``) hay ảnh 3 (rỗng). Nếu bước loại trừ ảnh query khỏi
-    ``others`` bị gỡ bỏ (hoặc hỏng), ảnh 1 sẽ tự khớp category với chính nó
-    (trùng 100%) và lọt vào ``others`` — kéo P@2 lên trên 0. P@2 == 0.0 do đó
-    chỉ đúng khi việc loại trừ thật sự hoạt động.
+    The mini corpus assigns image 1 the categories ``{"couch", "dog"}``,
+    which don't overlap with image 2 (``{"zebra"}``) or image 3 (empty). If
+    the step that excludes the query image from ``others`` were removed (or
+    broken), image 1 would match its own category with itself (100% match)
+    and end up in ``others`` — pushing P@2 above 0. P@2 == 0.0 is therefore
+    only correct when the exclusion is actually working.
     """
     row = eval_image2image(ctx, "clip-b32", image_ids=[1], k=2)
     assert row["P@2"] == pytest.approx(0.0)
@@ -193,14 +197,14 @@ def test_language_axis_scores_both_spaces_on_both_languages(ctx, settings):
 
 def test_write_table_emits_both_csv_and_markdown(settings):
     rows = [{"space": "clip-b32", "R@1": 0.3}, {"space": "laion-b32", "R@1": 0.35}]
-    write_table(rows, "axis1_model_t2i", settings, title="Trục 1")
+    write_table(rows, "axis1_model_t2i", settings, title="Axis 1")
     csv_text = (settings.results_dir / "axis1_model_t2i.csv").read_text("utf-8")
     md_text = (settings.results_dir / "axis1_model_t2i.md").read_text("utf-8")
     assert csv_text.splitlines()[0] == "space,R@1"
     assert "| space | R@1 |" in md_text
-    assert "Trục 1" in md_text
+    assert "Axis 1" in md_text
 
 
 def test_write_table_with_no_rows_is_not_an_error(settings):
-    write_table([], "empty_axis", settings, title="Rỗng")
+    write_table([], "empty_axis", settings, title="Empty")
     assert (settings.results_dir / "empty_axis.md").exists()

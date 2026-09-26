@@ -1,7 +1,7 @@
-"""Baseline không ngữ nghĩa: BM25 khớp từ khoá trên caption.
+"""Non-semantic baseline: BM25 keyword matching on captions.
 
-Space này không nằm trong Qdrant. Nó tồn tại để trả lời một câu hỏi duy nhất
-trong báo cáo: tìm kiếm ngữ nghĩa hơn khớp từ khoá bao nhiêu?
+This space does not live in Qdrant. It exists to answer a single question
+in the report: how much better is semantic search than keyword matching?
 """
 
 import pickle
@@ -19,17 +19,17 @@ TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 def tokenize(text: str) -> list[str]:
-    """Tách token đơn giản: hạ chữ thường, giữ chữ và số, bỏ dấu câu.
+    """Simple tokenization: lowercase, keep letters and digits, drop punctuation.
 
-    Cố tình đơn giản. Một baseline phải dễ giải thích; nếu nó thắng CLIP ở đâu
-    thì ta muốn biết chắc đó không phải nhờ một bước tiền xử lý tinh vi.
+    Deliberately simple. A baseline must be easy to explain; if it beats CLIP
+    anywhere, we want to be sure it's not because of some clever preprocessing step.
     """
     return TOKEN_PATTERN.findall(text.lower())
 
 
 @dataclass
 class Bm25Retriever:
-    """Index BM25 trên từng caption, điểm mỗi ảnh là điểm cao nhất trong caption của nó."""
+    """BM25 index over individual captions; each image's score is the highest score among its captions."""
 
     bm25: BM25Okapi
     caption_image_ids: np.ndarray
@@ -46,7 +46,7 @@ class Bm25Retriever:
 
     @classmethod
     def build(cls, corpus: Corpus) -> "Bm25Retriever":
-        """Dựng index từ mọi caption trong corpus."""
+        """Build the index from every caption in the corpus."""
         pairs = corpus.caption_pairs()
         documents = [tokenize(text) for _, _, text in pairs]
         return cls(
@@ -57,7 +57,7 @@ class Bm25Retriever:
         )
 
     def save(self, path: Path) -> None:
-        """Pickle phần index. Corpus không được pickle — nó nạp lại từ corpus.jsonl."""
+        """Pickle the index portion. The corpus itself is not pickled — it is reloaded from corpus.jsonl."""
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("wb") as fh:
             pickle.dump(
@@ -71,26 +71,26 @@ class Bm25Retriever:
 
     @classmethod
     def load(cls, path: Path, corpus: Corpus) -> "Bm25Retriever":
-        """Nạp index đã pickle và ghép lại với corpus.
+        """Load the pickled index and re-attach it to the corpus.
 
-        :raises FileNotFoundError: nếu chưa build. Người gọi nên dịch lỗi này
-            thành thông báo "chạy python tasks.py build --space bm25-cap".
+        :raises FileNotFoundError: if it hasn't been built yet. Callers should
+            translate this error into the message "run python tasks.py build --space bm25-cap".
         """
         if not path.exists():
-            raise FileNotFoundError(f"Chưa có index BM25 tại {path}")
+            raise FileNotFoundError(f"No BM25 index found at {path}")
         with path.open("rb") as fh:
             state = pickle.load(fh)
         return cls(corpus=corpus, **state)
 
     def search(self, query: str, k: int, allowed_ids: set[int] | None = None) -> list[Hit]:
-        """Top-k ảnh theo điểm BM25.
+        """Top-k images by BM25 score.
 
-        Điểm của một ảnh là điểm cao nhất trong các caption của nó (không phải
-        trung bình): một caption nói đúng thứ người dùng tìm là đủ, và lấy
-        trung bình sẽ phạt ảnh có nhiều caption nói về khía cạnh khác.
+        An image's score is the highest score among its captions (not the average):
+        one caption saying exactly what the user is looking for is enough, and
+        averaging would penalize images with many captions about other aspects.
 
-        Ảnh có điểm 0 (không khớp token nào) bị loại thay vì xếp cuối, để kết
-        quả không lẫn những ảnh hoàn toàn không liên quan.
+        Images with a score of 0 (no token matched) are excluded rather than ranked
+        last, so the results don't include completely irrelevant images.
         """
         tokens = tokenize(query)
         if not tokens:

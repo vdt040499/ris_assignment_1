@@ -11,8 +11,8 @@ export default function SearchBar({ onSearchText, onSearchImage, disabled }: Pro
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // Dùng chung cho drag-drop, dán clipboard, và input file: lấy ảnh đầu tiên
-  // trong danh sách file, bỏ qua nếu không phải ảnh (ví dụ dán text).
+  // Shared by drag-drop, clipboard paste, and file input: takes the first
+  // image in the file list, ignoring it if it's not an image (e.g. pasted text).
   function pickFirstImage(items: FileList | null) {
     const file = items?.[0];
     if (file && file.type.startsWith("image/")) {
@@ -46,7 +46,7 @@ export default function SearchBar({ onSearchText, onSearchImage, disabled }: Pro
       >
         <input
           className="flex-1 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none"
-          placeholder="Mô tả ảnh bạn muốn tìm, ví dụ: a man riding a horse on the beach"
+          placeholder="Describe the image you want to find, e.g.: a man riding a horse on the beach"
           value={text}
           onChange={(event) => setText(event.target.value)}
         />
@@ -55,7 +55,7 @@ export default function SearchBar({ onSearchText, onSearchImage, disabled }: Pro
           type="submit"
           disabled={disabled || !text.trim()}
         >
-          Tìm
+          Search
         </button>
       </form>
 
@@ -65,9 +65,9 @@ export default function SearchBar({ onSearchText, onSearchImage, disabled }: Pro
           type="button"
           onClick={() => fileInput.current?.click()}
         >
-          Chọn ảnh
+          Choose image
         </button>
-        <span>hoặc kéo-thả / dán ảnh vào khung này để tìm bằng ảnh</span>
+        <span>or drag-and-drop / paste an image into this box to search by image</span>
         <input
           ref={fileInput}
           className="hidden"

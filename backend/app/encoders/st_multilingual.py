@@ -1,7 +1,7 @@
-"""Text tower đa ngôn ngữ, distill để nằm cùng không gian với CLIP ViT-B/32.
+"""Multilingual text tower, distilled to share the same space as CLIP ViT-B/32.
 
-Chỉ encode text. Phía ảnh dùng lại collection của clip-b32 — giả định này được
-test `test_multilingual_shares_the_clip_space` canh giữ.
+Encodes text only. The image side reuses the clip-b32 collection — this
+assumption is guarded by the `test_multilingual_shares_the_clip_space` test.
 """
 
 from collections.abc import Sequence
@@ -15,14 +15,14 @@ from app.vecutil import l2_normalize
 
 
 class MultilingualTextEncoder:
-    """Text-only encoder cho model sentence-transformers CLIP đa ngôn ngữ."""
+    """Text-only encoder for the multilingual CLIP sentence-transformers model."""
 
     def __init__(self, space: SpaceSpec, device: str, batch_size: int) -> None:
-        """Khởi tạo encoder mà chưa nạp model.
+        """Initialize the encoder without loading the model yet.
 
-        :param space: khai báo space từ registry.
-        :param device: thiết bị chạy model, lấy từ ``Settings``.
-        :param batch_size: số mẫu xử lý mỗi lượt, lấy từ ``Settings``.
+        :param space: space declaration from the registry.
+        :param device: device to run the model on, taken from ``Settings``.
+        :param batch_size: number of samples processed per batch, taken from ``Settings``.
         """
         self.name = space.name
         self.dim = space.dim
@@ -32,7 +32,7 @@ class MultilingualTextEncoder:
         self._model: Any = None
 
     def _ensure_loaded(self) -> None:
-        """Nạp SentenceTransformer nếu chưa nạp. Idempotent."""
+        """Load the SentenceTransformer if not already loaded. Idempotent."""
         if self._model is not None:
             return
         from sentence_transformers import SentenceTransformer
@@ -40,11 +40,11 @@ class MultilingualTextEncoder:
         self._model = SentenceTransformer(self._space.hf_id, device=self._device)
 
     def encode_texts(self, texts: Sequence[str]) -> np.ndarray:
-        """Encode danh sách câu (đa ngôn ngữ).
+        """Encode a list of sentences (multilingual).
 
-        :param texts: danh sách câu văn bản.
-        :returns: ma trận ``(len(texts), dim)`` float32.
-        :raises ValueError: nếu dim thực tế khác dim khai báo trong registry.
+        :param texts: list of text sentences.
+        :returns: ``(len(texts), dim)`` float32 matrix.
+        :raises ValueError: if the actual dim differs from the dim declared in the registry.
         """
         if not texts:
             return np.zeros((0, self.dim), dtype=np.float32)
@@ -55,16 +55,16 @@ class MultilingualTextEncoder:
         vectors = np.asarray(vectors, dtype=np.float32)
         if vectors.shape[1] != self.dim:
             raise ValueError(
-                f"{self.name}: model trả dim {vectors.shape[1]}, registry khai {self.dim}"
+                f"{self.name}: model returned dim {vectors.shape[1]}, registry declares {self.dim}"
             )
         return l2_normalize(vectors) if self._space.normalized else vectors
 
     def encode_images(self, images: Sequence[Any]) -> np.ndarray:
-        """Không hỗ trợ — space này chỉ dùng để encode text.
+        """Not supported — this space is only used to encode text.
 
-        :raises ModeNotSupportedError: luôn luôn, vì phía ảnh dùng lại
-            collection của clip-b32 thay vì có encoder ảnh riêng.
+        :raises ModeNotSupportedError: always, because the image side reuses the
+            clip-b32 collection instead of having its own image encoder.
         """
         raise ModeNotSupportedError(
-            f"{self.name} chỉ encode text; phía ảnh dùng collection của clip-b32"
+            f"{self.name} only encodes text; the image side uses the clip-b32 collection"
         )

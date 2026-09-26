@@ -20,9 +20,9 @@ export default function DetailModal({ item, onClose, onFindSimilar }: Props) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-medium">Ảnh {item.image_id}</h2>
+            <h2 className="text-lg font-medium">Image {item.image_id}</h2>
             <p className="text-sm text-slate-400">
-              hạng {item.rank} · điểm {item.score.toFixed(4)}
+              rank {item.rank} · score {item.score.toFixed(4)}
             </p>
           </div>
           <button
@@ -30,18 +30,18 @@ export default function DetailModal({ item, onClose, onFindSimilar }: Props) {
             type="button"
             onClick={onClose}
           >
-            Đóng
+            Close
           </button>
         </div>
 
         <img
           className="max-h-[50vh] w-full rounded-md object-contain"
           src={`${API_BASE}/images/${item.file_name}`}
-          alt={item.captions[0] ?? `ảnh ${item.image_id}`}
+          alt={item.captions[0] ?? `image ${item.image_id}`}
         />
 
         <div className="flex flex-col gap-2 text-sm">
-          <h3 className="text-slate-300">Caption của người viết</h3>
+          <h3 className="text-slate-300">Original captions</h3>
           <ul className="list-disc pl-5 text-slate-400">
             {item.captions.map((caption, index) => (
               <li key={index}>{caption}</li>
@@ -60,7 +60,7 @@ export default function DetailModal({ item, onClose, onFindSimilar }: Props) {
           type="button"
           onClick={() => onFindSimilar(item.image_id)}
         >
-          Tìm ảnh tương tự
+          Find similar images
         </button>
       </div>
     </div>

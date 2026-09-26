@@ -1,7 +1,7 @@
-"""Sinh các query set dùng cho eval. Mọi lấy mẫu đều có seed cố định.
+"""Generate the query sets used for evaluation. Every sampling step uses a fixed seed.
 
-Ba file sinh ra được commit vào repo, vì không reproduce được query set thì
-không reproduce được số liệu.
+The three generated files are committed to the repo, because if the query set
+can't be reproduced, the numbers can't be reproduced either.
 """
 
 import argparse
@@ -17,22 +17,22 @@ SHORT_QUERY_TEMPLATE = "a {}"
 
 
 def sample_vi_queries(corpus: Corpus, size: int, seed: int) -> list[dict]:
-    """Lấy mẫu caption để dịch tay sang tiếng Việt.
+    """Sample captions for manual translation into Vietnamese.
 
     Args:
-        corpus: Corpus đã nạp, cung cấp toàn bộ cặp ``(image_id,
-            caption_index, text)`` để lấy mẫu.
-        size: Số lượng caption muốn lấy mẫu; bị cắt xuống bằng số cặp caption
-            thực có nếu ``size`` lớn hơn.
-        seed: Seed cho bộ sinh số ngẫu nhiên cục bộ (``random.Random``, không
-            phải module ``random`` toàn cục) để việc lấy mẫu tất định và có
-            thể tái lập giữa các lần chạy.
+        corpus: The loaded corpus, providing all ``(image_id,
+            caption_index, text)`` triples to sample from.
+        size: Number of captions to sample; clamped to the actual number of
+            caption pairs available if ``size`` is larger.
+        seed: Seed for a local random number generator (``random.Random``,
+            not the global ``random`` module) so sampling is deterministic
+            and reproducible across runs.
 
     Returns:
-        Danh sách dict ``{image_id, caption_index, en, vi}``, trong đó ``vi``
-        luôn rỗng — bước dịch tay sẽ điền vào sau. Lấy mẫu trên tập
-        ``(image_id, caption_index)`` không lặp lại nên không có caption nào
-        bị trùng.
+        A list of dicts ``{image_id, caption_index, en, vi}``, where ``vi``
+        is always empty — the manual translation step fills it in later.
+        Sampling is done over the set of ``(image_id, caption_index)``
+        pairs without replacement, so no caption is duplicated.
     """
     pairs = corpus.caption_pairs()
     rng = random.Random(seed)
@@ -44,34 +44,35 @@ def sample_vi_queries(corpus: Corpus, size: int, seed: int) -> list[dict]:
 
 
 def sample_i2i_queries(corpus: Corpus, size: int, seed: int) -> list[int]:
-    """Lấy mẫu image_id làm query cho chiều ảnh→ảnh.
+    """Sample image_ids to use as queries for the image→image direction.
 
     Args:
-        corpus: Corpus đã nạp, cung cấp danh sách ``image_ids()``.
-        size: Số lượng ảnh muốn lấy mẫu; bị cắt xuống bằng số ảnh thực có
-            trong corpus nếu ``size`` lớn hơn.
-        seed: Seed cho ``random.Random`` cục bộ để lấy mẫu tất định.
+        corpus: The loaded corpus, providing the list of ``image_ids()``.
+        size: Number of images to sample; clamped to the actual number of
+            images in the corpus if ``size`` is larger.
+        seed: Seed for a local ``random.Random`` for deterministic sampling.
 
     Returns:
-        Danh sách ``image_id`` duy nhất (không lặp), đã sắp xếp tăng dần.
+        A list of unique ``image_id`` values (no duplicates), sorted ascending.
     """
     rng = random.Random(seed)
     return sorted(rng.sample(corpus.image_ids(), min(size, len(corpus))))
 
 
 def build_short_queries(corpus: Corpus) -> list[dict]:
-    """Một query ngắn cho mỗi category thực sự xuất hiện trong corpus.
+    """One short query for each category that actually appears in the corpus.
 
     Args:
-        corpus: Corpus đã nạp; mỗi ``CorpusRecord`` mang danh sách
-            ``categories`` của ảnh đó.
+        corpus: The loaded corpus; each ``CorpusRecord`` carries that image's
+            list of ``categories``.
 
     Returns:
-        Danh sách dict ``{query, gold_category, n_gold}``, sắp theo tên
-        category. ``n_gold`` là số ảnh chứa category đó — báo cáo cần con số
-        này để người đọc biết mẫu số của P@k cho từng query. Category không
-        xuất hiện ảnh nào (không thể xảy ra vì Counter chỉ đếm cái có mặt)
-        được lọc bỏ tường minh để an toàn.
+        A list of dicts ``{query, gold_category, n_gold}``, sorted by category
+        name. ``n_gold`` is the number of images containing that category —
+        the report needs this number so readers know the denominator of P@k
+        for each query. A category with zero images (which can't actually
+        happen, since Counter only counts categories that are present) is
+        explicitly filtered out as a safety measure.
     """
     counts = Counter(
         category for record in corpus.records for category in record.categories
@@ -88,18 +89,18 @@ def build_short_queries(corpus: Corpus) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entrypoint: sinh ba file query set vào ``settings.data_dir``.
+    """CLI entrypoint: generates three query set files into ``settings.data_dir``.
 
     Args:
-        argv: Danh sách tham số dòng lệnh (không gồm tên chương trình); dùng
-            ``sys.argv[1:]`` khi để ``None``.
+        argv: List of command-line arguments (excluding the program name);
+            uses ``sys.argv[1:]`` when left as ``None``.
 
     Returns:
-        Mã thoát tiến trình (luôn ``0``).
+        The process exit code (always ``0``).
     """
-    parser = argparse.ArgumentParser(description="Sinh query set cho eval")
+    parser = argparse.ArgumentParser(description="Generate query sets for evaluation")
     parser.add_argument("--force", action="store_true",
-                        help="ghi đè file đã có (mất bản dịch tiếng Việt!)")
+                        help="overwrite existing files (loses the Vietnamese translation!)")
     args = parser.parse_args(argv)
 
     settings: Settings = get_settings()
@@ -117,12 +118,12 @@ def main(argv: list[str] | None = None) -> int:
     for filename, payload in targets.items():
         path = settings.data_dir / filename
         if path.exists() and not args.force:
-            print(f"{filename}: đã có, bỏ qua (dùng --force để ghi đè)")
+            print(f"{filename}: already exists, skipping (use --force to overwrite)")
             continue
         path.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
         )
-        print(f"{filename}: {len(payload)} entry")
+        print(f"{filename}: {len(payload)} entries")
     return 0
 
 

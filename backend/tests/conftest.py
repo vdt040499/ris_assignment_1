@@ -22,7 +22,7 @@ MINI_IMAGES = [
 
 @pytest.fixture
 def mini_annotations_dir(tmp_path: Path) -> Path:
-    """Sinh cặp file annotation COCO thu nhỏ: 3 ảnh, ảnh #3 không có category."""
+    """Generate a pair of miniature COCO annotation files: 3 images, image #3 has no category."""
     ann_dir = tmp_path / "annotations"
     ann_dir.mkdir()
     captions = {
@@ -55,7 +55,7 @@ def mini_annotations_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def mini_images_dir(tmp_path: Path) -> Path:
-    """Sinh 3 file JPEG thật đúng kích thước khai báo trong annotation."""
+    """Generate 3 real JPEG files matching the dimensions declared in the annotations."""
     img_dir = tmp_path / "val2017"
     img_dir.mkdir()
     for spec in MINI_IMAGES:
@@ -71,17 +71,17 @@ SIZE_TO_INDEX = {(80, 60): 0, (60, 90): 1, (40, 40): 2}
 
 
 class FakeEncoder:
-    """Encoder tất định 4 chiều: đủ để kiểm tra điều phối mà không tải model."""
+    """Deterministic 4-dimensional encoder: enough to test orchestration without loading a model."""
 
     name = "fake"
     dim = DIM
 
     def __init__(self):
         self.seen_texts: list[str] = []
-        #: Số lần encode_images được gọi. Không dùng bởi test nào có sẵn — chỉ
-        #: để test_build_index.py xác nhận DERIVED_FROM thật sự tránh encode
-        #: ảnh hai lần, chứ không phải trùng khớp ngẫu nhiên vì encoder giả
-        #: tất định.
+        #: Number of times encode_images has been called. Not used by any
+        #: existing test — only there so test_build_index.py can confirm that
+        #: DERIVED_FROM genuinely avoids encoding images twice, rather than
+        #: coincidentally matching because the fake encoder is deterministic.
         self.image_encode_calls = 0
 
     def encode_texts(self, texts):
@@ -105,13 +105,14 @@ def encoder():
 
 @pytest.fixture
 def settings(tmp_path):
-    """Settings cô lập trong tmp_path cho mọi test.
+    """Settings isolated in tmp_path for every test.
 
-    ``results_dir`` là field thô (``Path("results")``), không phải
-    ``@property`` suy từ ``data_dir`` như các đường dẫn khác trong
-    ``Settings`` — nên phải chỉ định tường minh ở đây. Bỏ sót nó khiến mọi
-    test ghi qua ``settings.results_dir`` (ví dụ ``write_table``) ghi thẳng
-    vào thư mục ``results/`` thật của dự án, đè lên kết quả eval thật.
+    ``results_dir`` is a raw field (``Path("results")``), not an
+    ``@property`` derived from ``data_dir`` like the other paths in
+    ``Settings`` — so it must be set explicitly here. Omitting it would make
+    every test that writes through ``settings.results_dir`` (e.g.
+    ``write_table``) write straight into the project's real ``results/``
+    directory, overwriting real eval results.
     """
     return Settings(_env_file=None, data_dir=tmp_path,
                     results_dir=tmp_path / "results", qdrant_mode="embedded",

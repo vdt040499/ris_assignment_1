@@ -16,7 +16,7 @@ export default function ResultCard({ item, onOpen }: Props) {
       <img
         className="aspect-square w-full object-cover"
         src={`${API_BASE}${item.thumb_url}`}
-        alt={item.captions[0] ?? `ảnh ${item.image_id}`}
+        alt={item.captions[0] ?? `image ${item.image_id}`}
         loading="lazy"
       />
       <span className="absolute left-1 top-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-xs text-slate-200">

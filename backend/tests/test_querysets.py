@@ -60,9 +60,9 @@ def test_short_queries_skip_categories_with_no_images(corpus):
     assert all(q["n_gold"] > 0 for q in build_short_queries(corpus))
 
 
-@pytest.mark.skipif(not VI_QUERYSET.exists(), reason="bộ tiếng Việt chưa sinh")
+@pytest.mark.skipif(not VI_QUERYSET.exists(), reason="Vietnamese queryset not yet generated")
 def test_vietnamese_queryset_is_fully_translated():
     entries = json.loads(VI_QUERYSET.read_text(encoding="utf-8"))
     assert len(entries) >= 200
-    assert all(e["vi"].strip() for e in entries), "còn entry chưa dịch"
-    assert all(e["vi"].strip() != e["en"].strip() for e in entries), "có entry chưa dịch thật"
+    assert all(e["vi"].strip() for e in entries), "there are still untranslated entries"
+    assert all(e["vi"].strip() != e["en"].strip() for e in entries), "there are entries that haven't actually been translated"

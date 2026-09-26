@@ -29,10 +29,11 @@ const DEFAULT_PARAMS: AdvancedParams = {
 const DEFAULT_SPACE = "clip-b32";
 
 /**
- * Cặp model mặc định cho chế độ so sánh — hai model có kiến trúc encoder
- * khác nhau (OpenAI CLIP vs LAION OpenCLIP) nên kết quả xếp hạng thường lệch
- * nhau rõ, minh hoạ tốt cho việc so sánh. Đặt tên hằng thay vì literal rời
- * rạc trong JSX, theo đúng pattern của `DEFAULT_SPACE` ở trên.
+ * Default model pair for compare mode — two models with different encoder
+ * architectures (OpenAI CLIP vs LAION OpenCLIP), so ranking results tend to
+ * diverge noticeably, which illustrates the comparison well. Named as a
+ * constant instead of a scattered literal in JSX, following the same
+ * pattern as `DEFAULT_SPACE` above.
  */
 const COMPARE_DEFAULT_LEFT = "clip-b32";
 const COMPARE_DEFAULT_RIGHT = "laion-b32";
@@ -59,7 +60,7 @@ export default function App() {
       .catch((cause) => setBootError(String(cause.message ?? cause)));
   }, []);
 
-  /** Category có mặt trong kết quả hiện tại — đủ để lọc mà không cần endpoint riêng. */
+  /** Categories present in the current results — enough to filter without a dedicated endpoint. */
   const categories = useMemo(() => {
     const found = new Set<string>();
     response?.results.forEach((item) => item.categories.forEach((c) => found.add(c)));
@@ -80,16 +81,18 @@ export default function App() {
   );
 
   /**
-   * Nếu space hiện tại không hỗ trợ `image2image` (ví dụ vừa bấm một chip
-   * tiếng Việt, đặt space = `mclip-b32`, chỉ hỗ trợ text2image), request tìm
-   * bằng ảnh chắc chắn bị backend từ chối (400 `ModeNotSupportedError`), và
-   * `useSearch` xoá trắng cả grid kết quả để hiện lỗi — đúng đường đi mà spec
-   * gọi là ranh giới giữa "demo mượt" và "demo bị kẹt". Tự chuyển sang space
-   * `ready` đầu tiên hỗ trợ `image2image` (giống pattern `firstReady` ở effect
-   * phía trên) để không bao giờ gửi một request chắc chắn hỏng.
+   * If the current space doesn't support `image2image` (e.g. after clicking
+   * a Vietnamese chip that sets space = `mclip-b32`, which only supports
+   * text2image), a search-by-image request is guaranteed to be rejected by
+   * the backend (400 `ModeNotSupportedError`), and `useSearch` clears the
+   * whole results grid to show the error — exactly the path the spec calls
+   * the line between "a smooth demo" and "a demo that gets stuck." Auto
+   * switch to the first `ready` space that supports `image2image` (same
+   * pattern as `firstReady` in the effect above) so we never send a request
+   * that is certain to fail.
    *
-   * @returns space nên dùng để gọi `runSimilar`/`runImage`, cùng cờ `switched`
-   *   để báo cho người dùng biết là có đổi model.
+   * @returns the space to use when calling `runSimilar`/`runImage`, along
+   *   with a `switched` flag to let the user know the model was changed.
    */
   const resolveImageSpace = useCallback(
     (current: string): { space: string; switched: boolean } => {
@@ -107,7 +110,7 @@ export default function App() {
     [spaces],
   );
 
-  /** Đóng modal rồi chạy tìm ảnh tương tự bằng `image_id` của ảnh đang xem. */
+  /** Closes the modal, then runs a similar-image search using the `image_id` of the image being viewed. */
   const findSimilar = useCallback(
     (imageId: number) => {
       setSelected(null);
@@ -115,7 +118,7 @@ export default function App() {
       if (target.switched) {
         setSpace(target.space);
         setSpaceSwitchNotice(
-          `Đã tự chuyển sang model "${target.space}" vì "${space}" không hỗ trợ tìm ảnh tương tự.`,
+          `Automatically switched to model "${target.space}" because "${space}" doesn't support similar-image search.`,
         );
       } else {
         setSpaceSwitchNotice(null);
@@ -132,16 +135,17 @@ export default function App() {
     [runSimilar, resolveImageSpace, space, params],
   );
 
-  /** Dùng chung cho ảnh upload (chọn file / kéo-thả / dán) — cùng cơ chế tự
-   * chuyển space như `findSimilar` ở trên, vì cả hai đều gọi `/search/image`
-   * và có thể rơi vào cùng space không hỗ trợ `image2image`. */
+  /** Shared for uploaded images (file picker / drag-drop / paste) — same
+   * auto-switch-space mechanism as `findSimilar` above, since both call
+   * `/search/image` and can hit the same space that doesn't support
+   * `image2image`. */
   const searchByImage = useCallback(
     (file: File) => {
       const target = resolveImageSpace(space);
       if (target.switched) {
         setSpace(target.space);
         setSpaceSwitchNotice(
-          `Đã tự chuyển sang model "${target.space}" vì "${space}" không hỗ trợ tìm bằng ảnh.`,
+          `Automatically switched to model "${target.space}" because "${space}" doesn't support image search.`,
         );
       } else {
         setSpaceSwitchNotice(null);
@@ -161,9 +165,9 @@ export default function App() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-5 bg-slate-900 p-6 text-slate-100">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Tìm kiếm ngữ nghĩa trên COCO val2017</h1>
+        <h1 className="text-2xl font-semibold">Semantic Search on COCO val2017</h1>
         <p className="text-sm text-slate-400">
-          Tìm bằng câu chữ hoặc bằng một tấm ảnh, trên 5.000 ảnh.
+          Search by text or by an image, across 5,000 images.
         </p>
       </header>
 
@@ -192,7 +196,7 @@ export default function App() {
           type="button"
           onClick={() => setComparing((value) => !value)}
         >
-          {comparing ? "Đang ở chế độ so sánh" : "So sánh hai model"}
+          {comparing ? "Compare mode active" : "Compare two models"}
         </button>
       </div>
 

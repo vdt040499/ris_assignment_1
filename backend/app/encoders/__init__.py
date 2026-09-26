@@ -1,4 +1,4 @@
-"""Factory encoder theo tên space, kèm cache LRU dùng chung cho cả API."""
+"""Encoder factory by space name, with an LRU cache shared across the API."""
 
 import threading
 
@@ -20,14 +20,14 @@ _cache_lock = threading.Lock()
 
 
 def build_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
-    """Tạo một encoder mới, không qua cache.
+    """Create a new encoder, bypassing the cache.
 
-    :param space_name: tên space trong registry (vd ``"clip-b32"``).
-    :param settings: cấu hình dùng để lấy ``device``/``batch_size``; mặc định
-        dùng ``get_settings()``.
-    :raises UnknownSpaceError: tên space không có trong registry.
-    :raises ValueError: space không dùng encoder nhúng (vd ``bm25-cap``, được
-        phục vụ bởi ``app.encoders.bm25.Bm25Retriever`` chứ không phải ở đây).
+    :param space_name: space name in the registry (e.g. ``"clip-b32"``).
+    :param settings: settings used to get ``device``/``batch_size``; defaults
+        to ``get_settings()``.
+    :raises UnknownSpaceError: the space name is not in the registry.
+    :raises ValueError: the space does not use an embedding encoder (e.g. ``bm25-cap``,
+        which is served by ``app.encoders.bm25.Bm25Retriever`` instead of here).
     """
     settings = settings or get_settings()
     space = get_space(space_name)
@@ -35,25 +35,24 @@ def build_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
         encoder_class = _ENCODER_CLASSES[space.encoder_key]
     except KeyError as exc:
         raise ValueError(
-            f"Space '{space_name}' dùng backend '{space.backend}', không có encoder nhúng"
+            f"Space '{space_name}' uses backend '{space.backend}', which has no embedding encoder"
         ) from exc
     return encoder_class(space, settings.device, settings.batch_size)
 
 
 def get_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
-    """Lấy encoder từ cache LRU dùng chung; nạp model nếu chưa có trong cache.
+    """Get an encoder from the shared LRU cache; load the model if not already cached.
 
-    :param space_name: tên space trong registry.
-    :param settings: cấu hình dùng để dựng cache lần đầu (kích thước cache,
-        device, batch_size); mặc định dùng ``get_settings()``.
+    :param space_name: space name in the registry.
+    :param settings: settings used to build the cache on first use (cache size,
+        device, batch_size); defaults to ``get_settings()``.
 
-    Lấy ``_cache`` vào biến cục bộ **bên trong** lock rồi mới gọi ``.get()``
-    bên ngoài lock. Nếu đọc lại global ``_cache`` sau khi đã nhả lock, một
-    lệnh gọi ``reset_encoder_cache()`` xen giữa có thể set nó về ``None``,
-    khiến ``.get()`` ném ``AttributeError`` — bind vào biến cục bộ đóng kín
-    khoảng hở đó. Việc load model đồng thời cho cùng một key vẫn được
-    ``LruEncoderCache.get()`` tự khoá và xử lý, không liên quan gì tới sửa
-    đổi này.
+    Binds ``_cache`` to a local variable **inside** the lock, then calls ``.get()``
+    outside the lock. If the global ``_cache`` were read again after releasing the
+    lock, an interleaved call to ``reset_encoder_cache()`` could set it back to
+    ``None``, causing ``.get()`` to raise ``AttributeError`` — binding to a local
+    variable closes that gap. Concurrent loading of the same key is still locked
+    and handled by ``LruEncoderCache.get()`` itself; this fix is unrelated to that.
     """
     global _cache
     settings = settings or get_settings()
@@ -68,7 +67,7 @@ def get_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
 
 
 def reset_encoder_cache() -> None:
-    """Xoá cache. Dùng trong test và khi cần giải phóng RAM."""
+    """Clear the cache. Used in tests and when RAM needs to be freed."""
     global _cache
     with _cache_lock:
         if _cache is not None:

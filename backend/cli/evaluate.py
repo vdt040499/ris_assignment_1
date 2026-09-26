@@ -1,9 +1,10 @@
-"""Năm trục ablation → results/*.csv và results/*.md.
+"""Five ablation axes → results/*.csv and results/*.md.
 
-Eval truy vấn đúng collection Qdrant mà demo đang dùng, nhưng encode query
-theo batch và gọi store trực tiếp thay vì đi qua SearchService: 25 nghìn lần
-encode lẻ trên CPU sẽ mất hàng giờ mà không thay đổi kết quả, vì encoder và
-phép chuẩn hoá là một.
+Evaluation queries the exact Qdrant collection the demo uses, but encodes
+queries in batches and calls the store directly instead of going through
+SearchService: 25 thousand individual encode calls on CPU would take hours
+without changing the result, since the encoder and the normalization are
+the same either way.
 """
 
 import argparse
@@ -52,18 +53,20 @@ class EvalContext:
 def text_vectors(
     ctx: EvalContext, space_name: str, texts: Sequence[str], cache_key: str
 ) -> np.ndarray:
-    """Encode query text theo batch, cache ra .npy để lần chạy sau tức thì.
+    """Encode query text in batches, caching to .npy so later runs are instant.
 
-    ``cache_key`` phải phân biệt được bộ query và template, nếu không hai thí
-    nghiệm khác nhau sẽ dùng chung một cache và cho ra số giống nhau một cách
-    giả tạo. Tên file cache còn bao gồm một hash ngắn của chính nội dung
-    ``texts`` (không chỉ ``cache_key`` và số lượng): nếu nội dung câu query đổi
-    nhưng số lượng câu giữ nguyên — ví dụ đổi ``RANDOM_SEED`` khi lấy mẫu, hay
-    sau này sửa bản dịch trong ``queryset_vi.json`` — cache cũ vẫn khớp đúng
-    tên file theo `{cache_key}_{len(texts)}` cũ và bị dùng nhầm cho một bộ
-    query khác, cho ra số liệu sai một cách im lặng (không có lỗi nào được
-    raise). Hash nội dung khiến nội dung khác luôn sinh tên file khác, nên
-    cache cũ tự động không khớp nữa và được sinh lại, thay vì bị dùng nhầm.
+    ``cache_key`` must distinguish the query set and template, otherwise two
+    different experiments would share the same cache and produce identical
+    numbers artificially. The cache filename also includes a short hash of
+    the ``texts`` content itself (not just ``cache_key`` and the count): if
+    the query text content changes but the count stays the same — e.g.
+    changing ``RANDOM_SEED`` during sampling, or later fixing a translation
+    in ``queryset_vi.json`` — the old cache would still match the old
+    `{cache_key}_{len(texts)}` filename and get reused for a different query
+    set by mistake, silently producing wrong numbers (no error would be
+    raised). Hashing the content makes different content always produce a
+    different filename, so the old cache automatically stops matching and
+    gets regenerated instead of being reused by mistake.
     """
     ctx.settings.cache_dir.mkdir(parents=True, exist_ok=True)
     content_hash = hashlib.sha1("\n".join(texts).encode("utf-8")).hexdigest()[:12]
@@ -86,7 +89,7 @@ def search_many(
     exact: bool = True,
     hnsw_ef: int | None = None,
 ) -> tuple[list[list[int]], list[float]]:
-    """Truy vấn từng vector, trả ``(danh sách ranking image_id, latency mỗi query)``."""
+    """Query each vector, returning ``(list of image_id rankings, latency per query)``."""
     rankings: list[list[int]] = []
     latencies: list[float] = []
     for vector in vectors:
@@ -116,10 +119,10 @@ def eval_text2image(
     cache_key: str = "captions",
     prompt_template: str | None = None,
 ) -> dict:
-    """Recall@k và MRR cho chiều text→ảnh.
+    """Recall@k and MRR for the text→image direction.
 
-    :param queries: danh sách ``(câu query, image_id đúng)``.
-    :param prompt_template: chuỗi có ``{}`` để bọc query, hoặc None dùng query thô.
+    :param queries: list of ``(query text, correct image_id)``.
+    :param prompt_template: a string with ``{}`` to wrap the query, or None to use the raw query.
     """
     space = get_space(space_name)
     texts = [
@@ -166,25 +169,27 @@ def eval_text2image(
 def eval_image2image(
     ctx: EvalContext, space_name: str, image_ids: list[int], k: int = 10
 ) -> dict:
-    """P@k và mAP@k cho chiều ảnh→ảnh, dùng proxy trùng category.
+    """P@k and mAP@k for the image→image direction, using category overlap as a proxy.
 
-    Ảnh query luôn bị loại khỏi ``others`` (kết quả dùng để tính P@k/mAP@k)
-    bằng một điều kiện lọc tường minh — việc lọc đó luôn đúng theo cấu trúc
-    code, nên không cần một con số riêng để "xác nhận" nó. ``self_hits`` đo
-    một thứ khác: ảnh query xuất hiện bao nhiêu lần trong ranking THÔ (trước
-    khi lọc), tức nó có thật sự là láng giềng gần nhất của chính nó không.
-    Giá trị bình thường là đúng bằng ``n_queries`` (mỗi ảnh luôn khớp tuyệt
-    đối với chính vector của nó). Thấp hơn gợi ý vector cache (dùng để tạo
-    query) không khớp vector đã nạp vào collection (cache/collection lệch
-    nhau); cao hơn gợi ý corpus có nhiều point cùng image_id (dữ liệu trùng
-    lặp) — cả hai đều là dấu hiệu cần kiểm tra trước khi tin P@k.
+    The query image is always excluded from ``others`` (the results used to
+    compute P@k/mAP@k) via an explicit filter condition — that filtering is
+    always correct by construction, so there's no need for a separate number
+    to "confirm" it. ``self_hits`` measures something different: how many
+    times the query image appears in the RAW ranking (before filtering),
+    i.e. whether it's actually its own nearest neighbor. The normal value
+    equals ``n_queries`` exactly (each image always matches its own vector
+    perfectly). A lower value suggests the cached vector (used to build the
+    query) doesn't match the vector loaded into the collection (cache and
+    collection are out of sync); a higher value suggests the corpus has
+    multiple points sharing the same image_id (duplicate data) — both are
+    signs to check before trusting P@k.
     """
     space = get_space(space_name)
     collection = collection_name(space, ctx.settings)
     cache = ctx.settings.cache_dir / f"imgvec_{space_name}.npy"
     if not cache.exists():
         raise FileNotFoundError(
-            f"Thiếu {cache}. Chạy: python tasks.py build --space {space_name}"
+            f"Missing {cache}. Run: python tasks.py build --space {space_name}"
         )
     all_vectors = np.load(cache)
     row_of = {image_id: row for row, image_id in enumerate(ctx.corpus.image_ids())}
@@ -195,12 +200,13 @@ def eval_image2image(
     ranked_labels: list[list[set[str]]] = []
     self_hits = 0
     for image_id, ranking in zip(image_ids, rankings):
-        # Đếm trên `ranking` THÔ (trước lọc) — cố ý. Đếm trên `others` (sau
-        # lọc) sẽ luôn ra 0 cho mọi input, vì `others` được xây dựng ngay bên
-        # dưới bằng chính điều kiện loại trừ `other != image_id`: một con số
-        # đúng-theo-cấu-trúc-code như vậy không phản ánh gì về dữ liệu thật,
-        # chỉ lặp lại một sự thật toán học. Đếm trên `ranking` mới thật sự phụ
-        # thuộc dữ liệu (xem docstring của hàm để biết cách đọc con số này).
+        # Counting on the RAW `ranking` (before filtering) — intentional. Counting
+        # on `others` (after filtering) would always be 0 for any input, since
+        # `others` is built right below using the exact exclusion condition
+        # `other != image_id`: such a correct-by-construction number wouldn't
+        # reflect anything about the real data, just restate a mathematical
+        # fact. Counting on `ranking` actually depends on the data (see the
+        # function's docstring for how to read this number).
         self_hits += sum(1 for other in ranking if other == image_id)
         others = [other for other in ranking if other != image_id][:k]
         query_labels.append(set(ctx.corpus.by_image_id[image_id].categories))
@@ -227,12 +233,12 @@ def eval_short_queries(
     prompt_template: str | None = None,
     cache_key: str = "short_raw",
 ) -> dict:
-    """P@k trên bộ query ngắn kiểu từ khoá; đúng = ảnh chứa category của query.
+    """P@k on the short keyword-style query set; correct = image contains the query's category.
 
-    :param cache_key: phải phân biệt từng template. Không dùng ``hash()`` của
-        template để sinh khoá: hash của chuỗi trong Python được ngẫu nhiên hoá
-        theo từng process, nên tên file cache sẽ đổi mỗi lần chạy — cache không
-        bao giờ trúng, và tệ hơn là tên file không tất định.
+    :param cache_key: must distinguish each template. Don't use ``hash()`` of
+        the template to generate the key: Python's string hash is randomized
+        per process, so the cache filename would change every run — the cache
+        would never hit, and worse, the filename wouldn't be deterministic.
     """
     entries = json.loads(
         (ctx.settings.data_dir / "queryset_short.json").read_text(encoding="utf-8")
@@ -268,40 +274,43 @@ def eval_ann_sweep(
     efs: Sequence[int] = ANN_EF_VALUES,
     k: int = 10,
 ) -> list[dict]:
-    """So HNSW với exact trên cùng một collection.
+    """Compare HNSW against exact search on the same collection.
 
-    Trả về đúng một dòng cho mỗi giá trị trong ``efs`` (không kèm dòng baseline
-    "exact" riêng): baseline exact cho cùng space này đã có sẵn trong bảng trục
-    1 (``eval_text2image`` mặc định ``exact=True``), nên lặp lại ở đây chỉ gây
-    lệch cột "hnsw_ef" (trộn lẫn số nguyên với chuỗi "exact") mà không thêm
-    thông tin mới. Ranking exact vẫn được tính nội bộ — nó là chuẩn để so
-    ``overlap@k`` cho từng ``ef``.
+    Returns exactly one row per value in ``efs`` (with no separate "exact"
+    baseline row): the exact baseline for this same space already exists in
+    the axis 1 table (``eval_text2image`` defaults to ``exact=True``), so
+    repeating it here would only skew the "hnsw_ef" column (mixing integers
+    with the string "exact") without adding new information. The exact
+    ranking is still computed internally — it's the reference used to
+    compute ``overlap@k`` for each ``ef``.
 
-    :raises RuntimeError: nếu đang ở chế độ embedded — chế độ đó luôn brute
-        force và bỏ qua HNSW, nên mọi con số thu được sẽ là exact đội lốt ANN.
-        Cũng raise nếu collection tồn tại nhưng chưa build xong HNSW (xem
-        finding C1 của final review): Qdrant chỉ build HNSW khi một segment
-        vượt ``indexing_threshold`` mặc định (20000 KB) — 5.000 vector nhỏ
-        không bao giờ chạm ngưỡng đó nên có thể "server mode" thật nhưng vẫn
-        đang full-scan, một cách lặng lẽ hơn cách embedded-mode gây ra.
+    :raises RuntimeError: if running in embedded mode — that mode always does
+        brute force and ignores HNSW, so any numbers obtained would be exact
+        search disguised as ANN. Also raises if the collection exists but
+        hasn't finished building HNSW (see finding C1 of the final review):
+        Qdrant only builds HNSW once a segment exceeds the default
+        ``indexing_threshold`` (20000 KB) — 5,000 small vectors never reach
+        that threshold, so it's possible to be in genuine "server mode" while
+        still doing a full scan, a more silent failure mode than the one
+        embedded mode causes.
     """
     if ctx.settings.qdrant_mode != "server":
         raise RuntimeError(
-            "Trục ANN vs exact cần Qdrant server. Đặt QDRANT_MODE=server và chạy "
-            "docker compose up -d qdrant"
+            "The ANN vs exact axis requires the Qdrant server. Set QDRANT_MODE=server "
+            "and run docker compose up -d qdrant"
         )
     space = get_space(space_name)
     collection = collection_name(space, ctx.settings)
     points, indexed = ctx.store.indexing_status(collection)
     if points > 0 and indexed != points:
         raise RuntimeError(
-            f"Collection '{collection}' chưa build xong HNSW "
-            f"(indexed_vectors_count={indexed}/{points}). Trục ANN vs exact cần "
-            "index đã build đầy đủ, nếu không mọi 'ANN' thực chất là full-scan "
-            "(exact đội lốt ANN). Chạy update_collection với optimizer_config="
-            "OptimizersConfigDiff(indexing_threshold=1) (KHÔNG phải 0 — 0 là "
-            "sentinel tắt hẳn indexing) rồi đợi tới khi indexed_vectors_count "
-            "== points_count trước khi chạy lại."
+            f"Collection '{collection}' hasn't finished building HNSW "
+            f"(indexed_vectors_count={indexed}/{points}). The ANN vs exact axis "
+            "needs a fully built index, otherwise every 'ANN' result is actually "
+            "a full scan (exact search disguised as ANN). Run update_collection "
+            "with optimizer_config=OptimizersConfigDiff(indexing_threshold=1) "
+            "(NOT 0 — 0 is the sentinel that disables indexing entirely) and wait "
+            "until indexed_vectors_count == points_count before running again."
         )
     texts = [text for text, _ in queries]
     gold = [image_id for _, image_id in queries]
@@ -330,10 +339,11 @@ def eval_ann_sweep(
 def eval_language(
     ctx: EvalContext, space_names: list[str], k: Sequence[int] = (1, 5, 10)
 ) -> list[dict]:
-    """Đo cùng 200 nội dung ở hai ngôn ngữ, cho từng space.
+    """Measure the same 200 items in both languages, for each space.
 
-    Cùng một tập nội dung ở cả hai ngôn ngữ là điều kiện để con số so được với
-    nhau: chênh lệch đọc ra được là chênh lệch do ngôn ngữ, không do bộ query.
+    Using the same set of items in both languages is the condition for the
+    numbers to be comparable: the difference observed is due to language,
+    not due to the query set.
     """
     entries = json.loads(
         (ctx.settings.data_dir / "queryset_vi.json").read_text(encoding="utf-8")
@@ -351,18 +361,19 @@ def eval_language(
 
 
 def _align_columns(rows: list[dict]) -> list[dict]:
-    """Điền ô rỗng cho các khoá thiếu, để bảng gộp nhiều loại dòng không mất cột.
+    """Fill empty cells for missing keys, so a table combining multiple row types doesn't lose columns.
 
-    ``eval_text2image`` và ``eval_short_queries`` trả về hai bộ khoá khác nhau
-    (Recall/MRR trên caption dài so với Precision trên query ngắn). Nếu
-    ``write_table`` lấy cột theo dòng đầu tiên như bình thường, các dòng có
-    khoá khác sẽ bị cắt cụt hoặc lệch cột một cách âm thầm. Hàm này hợp
-    (union) khoá của mọi dòng theo đúng thứ tự xuất hiện, rồi điền ``""`` vào
-    chỗ thiếu, để mọi dòng đều có đủ và đúng thứ tự cột khi ghi bảng.
+    ``eval_text2image`` and ``eval_short_queries`` return two different sets
+    of keys (Recall/MRR on long captions vs. Precision on short queries). If
+    ``write_table`` took its columns from the first row as usual, rows with
+    different keys would get silently truncated or misaligned. This function
+    takes the union of every row's keys in order of appearance, then fills
+    ``""`` into the gaps, so every row has the full, correctly ordered set of
+    columns when the table is written.
 
-    :param rows: danh sách dict có thể có tập khoá khác nhau.
-    :return: danh sách dict mới, mọi dict có cùng tập khoá (union), giữ
-        nguyên thứ tự dòng.
+    :param rows: list of dicts that may have different sets of keys.
+    :return: a new list of dicts, all sharing the same set of keys (the
+        union), preserving row order.
     """
     columns: list[str] = []
     for row in rows:
@@ -373,11 +384,11 @@ def _align_columns(rows: list[dict]) -> list[dict]:
 
 
 def write_table(rows: list[dict], name: str, settings: Settings, title: str) -> None:
-    """Ghi một bảng ra cả CSV (để tính toán) và Markdown (để dán vào báo cáo).
+    """Write a table out to both CSV (for computation) and Markdown (to paste into the report).
 
-    :param rows: các dòng dữ liệu; có thể có tập khoá khác nhau (xem
-        ``_align_columns``), hoặc rỗng — khi đó vẫn ghi ra file CSV/Markdown
-        hợp lệ nhưng không có dữ liệu, thay vì raise lỗi.
+    :param rows: data rows; may have different sets of keys (see
+        ``_align_columns``), or be empty — in that case a valid but empty
+        CSV/Markdown file is still written, instead of raising an error.
     """
     rows = _align_columns(rows)
     settings.results_dir.mkdir(parents=True, exist_ok=True)
@@ -395,10 +406,10 @@ def write_table(rows: list[dict], name: str, settings: Settings, title: str) -> 
         for row in rows:
             lines.append("| " + " | ".join(str(row[c]) for c in columns) + " |")
     else:
-        lines.append("_không có dòng nào_")
+        lines.append("_no rows_")
     lines.append("")
     (settings.results_dir / f"{name}.md").write_text("\n".join(lines), encoding="utf-8")
-    print(f"results/{name}.csv + .md — {len(rows)} dòng")
+    print(f"results/{name}.csv + .md — {len(rows)} rows")
 
 
 AXES = ("model-t2i", "model-i2i", "normalize", "prompt", "ann", "language")
@@ -408,10 +419,11 @@ I2I_SPACES = ("clip-b32", "clip-b16", "laion-b32", "siglip-b16", "resnet50")
 
 
 def sample_caption_queries(corpus: Corpus, size: int, seed: int) -> list[tuple[str, int]]:
-    """Lấy mẫu caption làm query text→ảnh, cùng một mẫu cho mọi space.
+    """Sample captions to use as text→image queries, the same sample for every space.
 
-    Dùng chung một mẫu là điều làm các dòng trong bảng so được với nhau. Corpus
-    tra cứu vẫn là toàn bộ 5.000 ảnh, chỉ số lượng query bị giới hạn.
+    Using one shared sample is what makes the rows in the table comparable.
+    The corpus being searched is still all 5,000 images; only the number of
+    queries is limited.
     """
     import random
 
@@ -422,13 +434,13 @@ def sample_caption_queries(corpus: Corpus, size: int, seed: int) -> list[tuple[s
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Chạy các trục ablation")
+    parser = argparse.ArgumentParser(description="Run the ablation axes")
     parser.add_argument("--axis", default="all",
-                        help=f"trục cần chạy hoặc 'all'. Hợp lệ: {', '.join(AXES)}")
+                        help=f"axis to run, or 'all'. Valid: {', '.join(AXES)}")
     parser.add_argument("--all", action="store_true", dest="run_all",
-                        help="bằng với --axis all; có để đúng lệnh ghi trong spec §11")
+                        help="equivalent to --axis all; provided to match the command in spec §11")
     parser.add_argument("--sample", type=int, default=T2I_SAMPLE_DEFAULT,
-                        help="số query text→ảnh (0 = dùng toàn bộ caption)")
+                        help="number of text→image queries (0 = use all captions)")
     parser.add_argument("--k", type=int, default=10)
     args = parser.parse_args(argv)
 
@@ -436,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
     corpus = load_corpus(settings.corpus_path)
     store = VectorStore(settings)
     if store.health() != "ok":
-        print("Không kết nối được Qdrant. Chạy: docker compose up -d qdrant")
+        print("Could not connect to Qdrant. Run: docker compose up -d qdrant")
         return 1
     ctx = EvalContext(settings, store, corpus)
 
@@ -450,15 +462,15 @@ def main(argv: list[str] | None = None) -> int:
     if "model-t2i" in wanted:
         write_table([eval_text2image(ctx, s, queries) for s in T2I_SPACES],
                     "axis1_model_t2i", settings,
-                    title=f"Trục 1 — text→ảnh ({len(queries)} query, 5.000 ảnh)")
+                    title=f"Axis 1 — text→image ({len(queries)} queries, 5,000 images)")
     if "model-i2i" in wanted:
         write_table([eval_image2image(ctx, s, image_ids, k=args.k) for s in I2I_SPACES],
                     "axis1_model_i2i", settings,
-                    title=f"Trục 1 — ảnh→ảnh ({len(image_ids)} ảnh query, proxy category)")
+                    title=f"Axis 1 — image→image ({len(image_ids)} query images, category proxy)")
     if "normalize" in wanted:
         write_table([eval_text2image(ctx, s, queries) for s in ("clip-b32", "clip-b32-raw")],
                     "axis2_normalize", settings,
-                    title="Trục 2 — cosine trên vector normalize vs dot trên vector thô")
+                    title="Axis 2 — cosine on normalized vectors vs dot product on raw vectors")
     if "prompt" in wanted:
         rows = []
         for index, template in enumerate(PROMPT_TEMPLATES):
@@ -469,15 +481,15 @@ def main(argv: list[str] | None = None) -> int:
                                            prompt_template=template,
                                            cache_key=f"short_{index}"))
         write_table(rows, "axis3_prompt", settings,
-                    title="Trục 3 — prompt template trên caption dài và trên query ngắn")
+                    title="Axis 3 — prompt template on long captions and on short queries")
     if "ann" in wanted:
         write_table(eval_ann_sweep(ctx, "clip-b32", queries, k=args.k),
                     "axis4_ann", settings,
-                    title=f"Trục 4 — HNSW vs exact trên 5.000 vector (k={args.k})")
+                    title=f"Axis 4 — HNSW vs exact on 5,000 vectors (k={args.k})")
     if "language" in wanted:
         write_table(eval_language(ctx, ["clip-b32", "mclip-b32"]),
                     "axis5_language", settings,
-                    title="Trục 5 — cùng 200 nội dung, tiếng Anh vs tiếng Việt")
+                    title="Axis 5 — same 200 items, English vs Vietnamese")
     return 0
 
 

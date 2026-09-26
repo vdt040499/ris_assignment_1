@@ -1,8 +1,8 @@
-"""Encode corpus và nạp vector vào Qdrant, mỗi space một collection.
+"""Encode the corpus and load vectors into Qdrant, one collection per space.
 
-Idempotent: space đã build thì bỏ qua, trừ khi có --force. Vector encode được
-cache ra .npy, nên build lại collection sau khi đổi cấu hình Qdrant không phải
-chạy lại model.
+Idempotent: a space that has already been built is skipped, unless --force is
+given. Encoded vectors are cached to .npy, so rebuilding a collection after
+changing the Qdrant configuration doesn't require re-running the model.
 """
 
 import argparse
@@ -38,17 +38,18 @@ from app.vectordb import VectorStore
 
 PAYLOAD_INDEX_FIELDS = ("categories", "supercategories")
 
-#: Space sở hữu collection caption. Đổi giá trị này nếu muốn chiều ảnh→text
-#: chạy trên một model khác.
+#: Space that owns the caption collection. Change this value if you want the
+#: image→text direction to run on a different model.
 CAPTION_SPACE = "clip-b32"
 
-#: Space bên trái lấy vector từ space bên phải rồi tự normalize lại. Hai bên
-#: dùng chung hf_id nên vector giống nhau từng bit — đúng điều kiện cần cho
-#: ablation normalize: chỉ một biến thay đổi.
+#: The space on the left derives its vectors from the space on the right and
+#: then normalizes them itself. Both sides share the same hf_id, so the
+#: vectors are bit-for-bit identical — exactly the condition needed for the
+#: normalize ablation: only one variable changes.
 DERIVED_FROM = {"clip-b32": "clip-b32-raw"}
 
-#: Thứ tự build cho `--space all`. clip-b32-raw đứng trước clip-b32 để lần
-#: encode duy nhất phục vụ được cả hai.
+#: Build order for `--space all`. clip-b32-raw comes before clip-b32 so a
+#: single encode pass can serve both.
 BUILD_ORDER = (
     "clip-b32-raw",
     "clip-b32",
@@ -61,7 +62,7 @@ BUILD_ORDER = (
 
 
 def git_commit() -> str:
-    """Commit hiện tại, để mỗi index_meta truy được về đúng code đã sinh ra nó."""
+    """Current commit, so each index_meta can be traced back to the exact code that generated it."""
     try:
         return subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"], text=True, stderr=subprocess.DEVNULL
@@ -78,14 +79,14 @@ def _load_image(path: Path) -> Image.Image:
 def encode_all_images(
     encoder, corpus: Corpus, images_dir: Path, batch_size: int
 ) -> np.ndarray:
-    """Encode toàn bộ ảnh corpus theo batch, in tiến độ ra stdout."""
+    """Encode the entire corpus of images in batches, printing progress to stdout."""
     chunks: list[np.ndarray] = []
     total = len(corpus)
     for start in range(0, total, batch_size):
         records = corpus.records[start : start + batch_size]
         images = [_load_image(images_dir / r.file_name) for r in records]
         chunks.append(encoder.encode_images(images))
-        print(f"  encode ảnh {min(start + batch_size, total)}/{total}", end="\r")
+        print(f"  encoding images {min(start + batch_size, total)}/{total}", end="\r")
     print()
     return np.concatenate(chunks, axis=0)
 
@@ -96,10 +97,10 @@ def image_vectors(
     corpus: Corpus,
     encoder_factory: Callable[..., object] = build_encoder,
 ) -> np.ndarray:
-    """Vector ảnh của một space, ưu tiên cache rồi mới tới encode.
+    """Image vectors for a space, preferring the cache before falling back to encoding.
 
-    Thứ tự thử: cache của chính space → suy ra từ cache của space nguồn trong
-    ``DERIVED_FROM`` → encode thật.
+    Order tried: the space's own cache → derived from the source space's cache
+    in ``DERIVED_FROM`` → actual encoding.
     """
     settings.cache_dir.mkdir(parents=True, exist_ok=True)
     cache = settings.cache_dir / f"imgvec_{space.name}.npy"
@@ -127,7 +128,7 @@ def build_caption_collection(
     encoder_factory: Callable[..., object] = build_encoder,
     force: bool = False,
 ) -> int:
-    """Nạp mọi caption vào collection caption. Trả về số point đã nạp (0 nếu bỏ qua)."""
+    """Load every caption into the caption collection. Returns the number of points loaded (0 if skipped)."""
     space = get_space(CAPTION_SPACE)
     name = collection_name(space, settings, target="caption")
     if store.count(name) > 0 and not force:
@@ -140,9 +141,10 @@ def build_caption_collection(
     payloads = [
         caption_payload(corpus.by_image_id[image_id], idx) for image_id, idx, _ in pairs
     ]
-    # Dùng chiều thật của vector (không phải space.dim khai báo trong registry):
-    # đúng trong sản xuất vì hai giá trị luôn khớp, và không phụ thuộc registry
-    # khi test tiêm một encoder giả có chiều khác để chạy nhanh không cần model.
+    # Use the vector's actual dimension (not space.dim as declared in the registry):
+    # correct in production since the two values always match, and independent of
+    # the registry when a test injects a fake encoder with a different dimension
+    # to run fast without needing the model.
     store.ensure_collection(name, dim=vectors.shape[1], distance=space.distance,
                             recreate=force)
     store.upsert(name, ids=ids, vectors=vectors, payloads=payloads,
@@ -159,31 +161,32 @@ def build_space(
     force: bool = False,
     encoder_factory: Callable[..., object] = build_encoder,
 ) -> dict | None:
-    """Build index cho một space.
+    """Build the index for a space.
 
-    :return: dict ``index_meta`` đã ghi ra đĩa, hoặc ``None`` nếu bỏ qua (space
-        dùng lại collection của space khác, hoặc index đã có mà không ``force``).
+    :return: the ``index_meta`` dict written to disk, or ``None`` if skipped
+        (the space reuses another space's collection, or the index already
+        exists and ``force`` was not given).
     """
     space = get_space(space_name)
     if not space.builds_index:
-        print(f"{space_name}: bỏ qua — dùng lại collection của space khác ({space.note})")
+        print(f"{space_name}: skipped — reuses another space's collection ({space.note})")
         return None
 
     started = perf_counter()
     if space.backend == BACKEND_BM25:
         if settings.bm25_path.exists() and not force:
-            print(f"{space_name}: đã có index, bỏ qua")
+            print(f"{space_name}: index already exists, skipping")
             return None
         Bm25Retriever.build(corpus).save(settings.bm25_path)
         n_points = len(corpus)
     else:
         name = collection_name(space, settings, target="image")
         if store.count(name) > 0 and not force:
-            print(f"{space_name}: đã có {store.count(name)} point, bỏ qua")
+            print(f"{space_name}: already has {store.count(name)} points, skipping")
             return None
         vectors = image_vectors(space, settings, corpus, encoder_factory)
-        # Xem chú thích ở build_caption_collection: dùng chiều thật của vector,
-        # không phải space.dim khai báo trong registry.
+        # See the note in build_caption_collection: use the vector's actual
+        # dimension, not space.dim as declared in the registry.
         store.ensure_collection(name, dim=vectors.shape[1], distance=space.distance,
                                 recreate=force)
         store.upsert(name, ids=corpus.image_ids(), vectors=vectors,
@@ -209,24 +212,24 @@ def build_space(
     (settings.index_meta_dir / f"{space.name}.json").write_text(
         json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    print(f"{space_name}: {n_points} point trong {meta['encode_seconds']}s")
+    print(f"{space_name}: {n_points} points in {meta['encode_seconds']}s")
     return meta
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build index vector cho từng space")
+    parser = argparse.ArgumentParser(description="Build the vector index for each space")
     parser.add_argument("--space", default="all",
-                        help=f"tên space hoặc 'all'. Hợp lệ: {', '.join(SPACES)}")
-    parser.add_argument("--force", action="store_true", help="build lại dù đã có index")
+                        help=f"space name or 'all'. Valid: {', '.join(SPACES)}")
+    parser.add_argument("--force", action="store_true", help="rebuild even if the index already exists")
     parser.add_argument("--skip-captions", action="store_true",
-                        help="không build collection caption")
+                        help="don't build the caption collection")
     args = parser.parse_args(argv)
 
     settings = get_settings()
     corpus = load_corpus(settings.corpus_path)
     store = VectorStore(settings)
     if store.health() != "ok":
-        print("Không kết nối được Qdrant. Chạy: docker compose up -d qdrant")
+        print("Could not connect to Qdrant. Run: docker compose up -d qdrant")
         return 1
 
     names = BUILD_ORDER if args.space == "all" else (args.space,)
@@ -235,7 +238,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.skip_captions and args.space in ("all", CAPTION_SPACE):
         added = build_caption_collection(settings, store, corpus, force=args.force)
-        print(f"collection caption: {added} point mới")
+        print(f"caption collection: {added} new points")
     return 0
 
 

@@ -10,16 +10,18 @@ interface SearchState {
 }
 
 /**
- * Một lần tìm kiếm và toàn bộ trạng thái của nó.
+ * A single search and all of its state.
  *
- * Giữ kết quả cũ trong lúc đang tải để grid không nháy trắng giữa hai lần tìm;
- * chỉ xoá khi có lỗi. Trả về response để chỗ gọi (chế độ so sánh) dùng trực tiếp.
+ * Keeps the previous result while loading so the grid doesn't flash blank
+ * between two searches; it's only cleared on error. Returns the response so
+ * the caller (compare mode) can use it directly.
  *
- * @returns `response` (kết quả gần nhất còn hợp lệ, hoặc `null`), `loading`,
- *   `error` (message tiếng người, hoặc `null`), cùng ba hàm chạy tìm kiếm:
- *   `runText` (tìm theo văn bản), `runImage` (tìm theo ảnh upload), `runSimilar`
- *   (tìm ảnh tương tự một ảnh đã có trong corpus qua `imageId`). Cả ba trả về
- *   `Promise<SearchResponse | null>` — `null` khi có lỗi.
+ * @returns `response` (the latest valid result, or `null`), `loading`,
+ *   `error` (a human-readable message, or `null`), plus three functions to
+ *   run a search: `runText` (search by text), `runImage` (search by an
+ *   uploaded image), `runSimilar` (find images similar to one already in the
+ *   corpus via `imageId`). All three return `Promise<SearchResponse | null>`
+ *   — `null` on error.
  */
 export function useSearch() {
   const [state, setState] = useState<SearchState>({
@@ -36,7 +38,7 @@ export function useSearch() {
       return response;
     } catch (error) {
       const message =
-        error instanceof ApiError ? error.message : "Lỗi không xác định";
+        error instanceof ApiError ? error.message : "Unknown error";
       setState({ response: null, loading: false, error: message });
       return null;
     }

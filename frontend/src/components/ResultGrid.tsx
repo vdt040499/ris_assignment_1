@@ -11,7 +11,7 @@ export default function ResultGrid({ items, loading, onOpen }: Props) {
   if (!loading && items.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-slate-500">
-        Không có kết quả nào khớp. Thử bỏ filter hoặc đổi cách diễn đạt.
+        No matching results. Try removing filters or rephrasing your query.
       </p>
     );
   }

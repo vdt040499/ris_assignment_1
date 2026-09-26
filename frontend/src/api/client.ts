@@ -5,23 +5,23 @@ import type {
   SpaceInfo,
 } from "../types";
 
-/** Địa chỉ API, lấy từ biến môi trường Vite; không viết cứng trong component. */
+/** API base URL, taken from the Vite environment variable; not hardcoded in components. */
 export const API_BASE = (
   import.meta.env.VITE_API_BASE ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
 /**
- * Ghép `API_BASE` với một path, tránh double-slash dù `path` có hay không có
- * dấu `/` ở đầu.
+ * Joins `API_BASE` with a path, avoiding a double slash whether or not
+ * `path` starts with `/`.
  *
- * @param path - Đường dẫn tương đối của endpoint, ví dụ `"/spaces"`.
- * @returns URL đầy đủ tới API.
+ * @param path - The endpoint's relative path, e.g. `"/spaces"`.
+ * @returns The full URL to the API.
  */
 export function apiUrl(path: string): string {
   return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-/** Lỗi API kèm status, để UI phân biệt 409 "chưa build index" với 503 "Qdrant chết". */
+/** An API error with a status, so the UI can distinguish 409 "index not built yet" from 503 "Qdrant is down". */
 export class ApiError extends Error {
   readonly status: number;
 
@@ -33,15 +33,16 @@ export class ApiError extends Error {
 }
 
 /**
- * Đọc response lỗi HTTP và dựng `ApiError` tương ứng.
+ * Reads an HTTP error response and builds the corresponding `ApiError`.
  *
- * FastAPI trả `{"detail": string}` cho lỗi miền, hoặc `{"detail": [...]}`
- * (mảng lỗi validation của Pydantic) cho lỗi 422. Hàm này chuẩn hoá cả hai
- * dạng thành một message duy nhất; nếu body không phải JSON hợp lệ thì giữ
- * thông báo mặc định theo status code.
+ * FastAPI returns `{"detail": string}` for domain errors, or
+ * `{"detail": [...]}` (an array of Pydantic validation errors) for 422
+ * errors. This function normalizes both forms into a single message; if the
+ * body isn't valid JSON, it keeps the default message based on the status
+ * code.
  *
- * @param response - Response HTTP không `ok`.
- * @returns `ApiError` đã gắn `status` và message phù hợp.
+ * @param response - The non-`ok` HTTP response.
+ * @returns An `ApiError` with the appropriate `status` and message attached.
  */
 async function readError(response: Response): Promise<ApiError> {
   let detail = `HTTP ${response.status}`;
@@ -53,27 +54,27 @@ async function readError(response: Response): Promise<ApiError> {
       detail = body.detail.map((d: { msg?: string }) => d.msg ?? "").join("; ");
     }
   } catch {
-    // Body không phải JSON: giữ thông báo mặc định theo status.
+    // Body isn't JSON: keep the default message based on status.
   }
   return new ApiError(response.status, detail);
 }
 
 /**
- * Gọi fetch tới API và giải JSON, dịch mọi lỗi (HTTP không ok, hoặc network
- * fail) thành `ApiError`.
+ * Calls fetch against the API and parses JSON, translating any error (a
+ * non-ok HTTP response, or a network failure) into an `ApiError`.
  *
- * @param path - Đường dẫn endpoint, xem {@link apiUrl}.
- * @param init - Tuỳ chọn `fetch` (method, headers, body).
- * @returns Body JSON đã parse, ép kiểu `T`.
- * @throws {ApiError} status 0 khi network lỗi (không gọi được server); status
- *   HTTP thật khi server trả lỗi.
+ * @param path - The endpoint path, see {@link apiUrl}.
+ * @param init - `fetch` options (method, headers, body).
+ * @returns The parsed JSON body, cast to `T`.
+ * @throws {ApiError} status 0 on a network failure (server unreachable); the
+ *   real HTTP status when the server returns an error.
  */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(apiUrl(path), init);
   } catch (cause) {
-    throw new ApiError(0, `Không gọi được API tại ${API_BASE}. API đã chạy chưa?`);
+    throw new ApiError(0, `Could not reach the API at ${API_BASE}. Is the API running?`);
   }
   if (!response.ok) {
     throw await readError(response);
@@ -106,15 +107,15 @@ export function searchText(params: SearchParams): Promise<SearchResponse> {
 }
 
 /**
- * Tìm bằng ảnh. Truyền `file` cho ảnh upload, hoặc `imageId` cho ảnh đã có
- * trong corpus — API yêu cầu đúng một trong hai, nên hàm này chỉ gắn field nào
- * thực sự có.
+ * Search by image. Pass `file` for an uploaded image, or `imageId` for an
+ * image already in the corpus — the API requires exactly one of the two, so
+ * this function only attaches whichever field is actually present.
  *
- * @param params - Tham số tìm kiếm chung, cộng đúng một trong `file` (ảnh
- *   upload từ máy người dùng) hoặc `imageId` (ảnh đã có trong corpus, dùng
- *   cho "tìm ảnh tương tự"). Truyền cả hai hoặc không truyền gì là lỗi dùng
- *   sai hợp đồng API, không được validate ở tầng này.
- * @returns Kết quả tìm kiếm, cùng hình dạng với `searchText`.
+ * @param params - Common search parameters, plus exactly one of `file` (an
+ *   image uploaded from the user's machine) or `imageId` (an image already
+ *   in the corpus, used for "find similar images"). Passing both or neither
+ *   is a misuse of the API contract and isn't validated at this layer.
+ * @returns The search result, in the same shape as `searchText`.
  */
 export function searchImage(
   params: SearchParams & { file?: File; imageId?: number },
