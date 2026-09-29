@@ -4,15 +4,18 @@ Việc duy nhất tầng này làm ngoài định tuyến là dịch exception m
 code và chặn path traversal khi serve file ảnh.
 """
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import ValidationError
 
 from app.config import Settings, get_settings
 from app.corpus import load_corpus
+from app.encoders import warmup
 from app.errors import (
     BadImageError,
     BadRequestError,
@@ -48,26 +51,26 @@ ERROR_STATUS: dict[type[SearchError], int] = {
 }
 
 EXAMPLE_QUERIES: tuple[dict, ...] = (
-    {"label": "Chó trên sofa", "query": "a dog lying on a sofa",
+    {"label": "Dog on a sofa", "query": "a dog lying on a sofa",
      "space": "clip-b32", "language": "en"},
-    {"label": "Người cưỡi ngựa trên bãi biển",
+    {"label": "Man riding a horse on the beach",
      "query": "a man riding a horse on the beach",
      "space": "clip-b32", "language": "en"},
-    {"label": "Đường phố ban đêm có đèn neon",
+    {"label": "City street at night with neon lights",
      "query": "a city street at night with neon lights",
      "space": "laion-b32", "language": "en"},
-    {"label": "Ba con chó (thử đếm số)", "query": "three dogs",
+    {"label": "Three dogs (counting test)", "query": "three dogs",
      "space": "clip-b32", "language": "en"},
-    {"label": "Con mèo đang ngủ trên giường",
+    {"label": "Cat sleeping on a bed",
      "query": "một con mèo đang ngủ trên giường",
      "space": "mclip-b32", "language": "vi"},
-    {"label": "Hai người chơi tennis",
+    {"label": "Two people playing tennis",
      "query": "hai người đang chơi tennis",
      "space": "mclip-b32", "language": "vi"},
-    {"label": "Bàn ăn có pizza và rượu",
+    {"label": "Dinner table with pizza and wine",
      "query": "bàn ăn có pizza và một ly rượu vang",
      "space": "mclip-b32", "language": "vi"},
-    {"label": "Xe buýt màu đỏ trên phố",
+    {"label": "Red bus on the street",
      "query": "một chiếc xe buýt màu đỏ trên đường phố",
      "space": "mclip-b32", "language": "vi"},
 )
@@ -100,7 +103,13 @@ def create_app(
         corpus = load_corpus(settings.corpus_path)
         service = SearchService(settings, store, corpus)
 
-    app = FastAPI(title="COCO multimodal search")
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        # Chạy trong thread để không chặn event loop; server nhận request sau khi xong.
+        await run_in_threadpool(warmup, settings)
+        yield
+
+    app = FastAPI(title="COCO multimodal search", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
   onSearchText: (query: string) => void;
@@ -8,16 +8,31 @@ interface Props {
 
 export default function SearchBar({ onSearchText, onSearchImage, disabled }: Props) {
   const [text, setText] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // Dùng chung cho drag-drop, dán clipboard, và input file: lấy ảnh đầu tiên
-  // trong danh sách file, bỏ qua nếu không phải ảnh (ví dụ dán text).
+  const previewUrl = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
+  useEffect(() => {
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  // Shared by drag-drop, clipboard paste, and the file input: takes the first
+  // image in the file list, ignoring it if it is not an image (e.g. pasted text).
+  // The image only becomes the pending query (text and image are mutually
+  // exclusive, so the text is cleared); the search runs when Search is pressed.
   function pickFirstImage(items: FileList | null) {
     const file = items?.[0];
     if (file && file.type.startsWith("image/")) {
-      onSearchImage(file);
+      setImage(file);
+      setText("");
     }
+  }
+
+  function clearImage() {
+    setImage(null);
+    if (fileInput.current) fileInput.current.value = "";
   }
 
   return (
@@ -41,23 +56,45 @@ export default function SearchBar({ onSearchText, onSearchImage, disabled }: Pro
         className="flex gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          if (text.trim()) onSearchText(text.trim());
+          if (image) onSearchImage(image);
+          else if (text.trim()) onSearchText(text.trim());
         }}
       >
         <input
           className="flex-1 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none"
-          placeholder="Mô tả ảnh bạn muốn tìm, ví dụ: a man riding a horse on the beach"
+          placeholder="Describe the image you want to find"
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            setText(event.target.value);
+            if (image) clearImage();
+          }}
         />
         <button
           className="rounded-md bg-indigo-500 px-4 py-2 font-medium text-white hover:bg-indigo-400 disabled:opacity-50"
           type="submit"
-          disabled={disabled || !text.trim()}
+          disabled={disabled || (!image && !text.trim())}
         >
-          Tìm
+          Search
         </button>
       </form>
+
+      {previewUrl && image && (
+        <div className="flex items-center gap-3 text-sm text-slate-300">
+          <img
+            className="h-24 w-24 rounded-md border border-slate-700 object-cover"
+            src={previewUrl}
+            alt="Query image"
+          />
+          <span className="truncate">{image.name}</span>
+          <button
+            className="rounded-md border border-slate-700 px-3 py-1 hover:border-indigo-500"
+            type="button"
+            onClick={clearImage}
+          >
+            Remove
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 text-sm text-slate-400">
         <button
@@ -65,9 +102,9 @@ export default function SearchBar({ onSearchText, onSearchImage, disabled }: Pro
           type="button"
           onClick={() => fileInput.current?.click()}
         >
-          Chọn ảnh
+          Choose image
         </button>
-        <span>hoặc kéo-thả / dán ảnh vào khung này để tìm bằng ảnh</span>
+        <span>or drag and drop / paste an image here, then press Search</span>
         <input
           ref={fileInput}
           className="hidden"

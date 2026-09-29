@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, apiUrl, searchImage, searchText } from "./client";
 
-// `File` chỉ thành global từ Node 20; máy này chạy Node 18 nên phải import
-// tường minh từ node:buffer, nếu không test đổ ReferenceError.
+// `File` only became a global in Node 20; this machine runs Node 18, so it must
+// be imported explicitly from node:buffer, otherwise the tests fail with a ReferenceError.
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -43,11 +43,11 @@ describe("searchText", () => {
 
   it("turns an error response into ApiError with its status and detail", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      jsonResponse({ detail: "chưa build index" }, 409),
+      jsonResponse({ detail: "index not built" }, 409),
     );
     await expect(searchText({ query: "a dog", space: "siglip-b16" })).rejects.toMatchObject({
       status: 409,
-      message: "chưa build index",
+      message: "index not built",
     });
   });
 

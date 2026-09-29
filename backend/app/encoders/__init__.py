@@ -1,13 +1,20 @@
 """Factory encoder theo tên space, kèm cache LRU dùng chung cho cả API."""
 
+import logging
 import threading
+
+from PIL import Image
 
 from app.config import Settings, get_settings
 from app.encoders.base import Encoder, LruEncoderCache
 from app.encoders.hf_dual import HFDualEncoder
 from app.encoders.resnet import ResNetEncoder
 from app.encoders.st_multilingual import MultilingualTextEncoder
-from app.registry import get_space
+from app.registry import MODE_TEXT2IMAGE, get_space
+
+logger = logging.getLogger(__name__)
+
+WARMUP_TEXT = "warm-up"
 
 _ENCODER_CLASSES = {
     "hf_dual": HFDualEncoder,
@@ -65,6 +72,39 @@ def get_encoder(space_name: str, settings: Settings | None = None) -> Encoder:
             )
         cache = _cache
     return cache.get(space_name)
+
+
+def warmup(settings: Settings | None = None) -> list[str]:
+    """Nạp sẵn model của ``settings.warmup_spaces`` vào cache dùng chung.
+
+    Encoder nạp model lười ở lần ``encode_*`` đầu, nên ngoài ``get_encoder``
+    còn phải encode thử một mẫu. Space chỉ nhận ảnh (vd resnet50) được thử bằng
+    ảnh trắng cỡ ``warmup_image_size``. Space không có encoder nhúng (vd
+    ``bm25-cap``) bị bỏ qua. Một space lỗi (offline, thiếu weight) chỉ bị log,
+    không chặn các space còn lại hay việc khởi động server.
+
+    :returns: tên các space đã nạp thành công.
+    """
+    settings = settings or get_settings()
+    names = [n for n in settings.warmup_spaces_list if get_space(n).encoder_key in _ENCODER_CLASSES]
+    if len(names) > settings.model_cache_size:
+        logger.warning(
+            "warmup_spaces (%d) nhiều hơn model_cache_size (%d): space nạp trước sẽ bị đẩy khỏi cache",
+            len(names), settings.model_cache_size,
+        )
+    loaded: list[str] = []
+    for name in names:
+        try:
+            encoder = get_encoder(name, settings)
+            if MODE_TEXT2IMAGE in get_space(name).modes:
+                encoder.encode_texts([WARMUP_TEXT])
+            else:
+                size = (settings.warmup_image_size,) * 2
+                encoder.encode_images([Image.new("RGB", size)])
+            loaded.append(name)
+        except Exception:
+            logger.exception("Warm-up space '%s' thất bại", name)
+    return loaded
 
 
 def reset_encoder_cache() -> None:

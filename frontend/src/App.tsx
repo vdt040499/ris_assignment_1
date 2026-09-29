@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { fetchExamples, fetchSpaces } from "./api/client";
-import AdvancedPanel, { type AdvancedParams } from "./components/AdvancedPanel";
+import { fetchSpaces } from "./api/client";
+import type { AdvancedParams } from "./components/AdvancedPanel";
 import CompareView from "./components/CompareView";
 import DetailModal from "./components/DetailModal";
-import ExampleChips from "./components/ExampleChips";
 import ModelSelect from "./components/ModelSelect";
+import ResultCountSelect from "./components/ResultCountSelect";
 import ResultGrid from "./components/ResultGrid";
 import SearchBar from "./components/SearchBar";
 import StatusBar from "./components/StatusBar";
 import { useSearch } from "./hooks/useSearch";
-import type { ExampleQuery, SearchResultItem, SpaceInfo } from "./types";
+import type { SearchResultItem, SpaceInfo } from "./types";
 
 const DEFAULT_PARAMS: AdvancedParams = {
   k: 20,
@@ -29,17 +29,16 @@ const DEFAULT_PARAMS: AdvancedParams = {
 const DEFAULT_SPACE = "clip-b32";
 
 /**
- * Cặp model mặc định cho chế độ so sánh — hai model có kiến trúc encoder
- * khác nhau (OpenAI CLIP vs LAION OpenCLIP) nên kết quả xếp hạng thường lệch
- * nhau rõ, minh hoạ tốt cho việc so sánh. Đặt tên hằng thay vì literal rời
- * rạc trong JSX, theo đúng pattern của `DEFAULT_SPACE` ở trên.
+ * Default model pair for compare mode. The two models were trained on
+ * different data (OpenAI CLIP vs LAION OpenCLIP), so their rankings usually
+ * differ clearly, which makes for a good comparison. Named constants instead
+ * of scattered literals in JSX, following the `DEFAULT_SPACE` pattern above.
  */
 const COMPARE_DEFAULT_LEFT = "clip-b32";
 const COMPARE_DEFAULT_RIGHT = "laion-b32";
 
 export default function App() {
   const [spaces, setSpaces] = useState<SpaceInfo[]>([]);
-  const [examples, setExamples] = useState<ExampleQuery[]>([]);
   const [space, setSpace] = useState(DEFAULT_SPACE);
   const [params, setParams] = useState<AdvancedParams>(DEFAULT_PARAMS);
   const [bootError, setBootError] = useState<string | null>(null);
@@ -49,22 +48,14 @@ export default function App() {
   const { response, loading, error, runText, runImage, runSimilar } = useSearch();
 
   useEffect(() => {
-    Promise.all([fetchSpaces(), fetchExamples()])
-      .then(([spaceList, exampleList]) => {
+    fetchSpaces()
+      .then((spaceList) => {
         setSpaces(spaceList);
-        setExamples(exampleList);
         const firstReady = spaceList.find((item) => item.ready);
         if (firstReady) setSpace(firstReady.name);
       })
       .catch((cause) => setBootError(String(cause.message ?? cause)));
   }, []);
-
-  /** Category có mặt trong kết quả hiện tại — đủ để lọc mà không cần endpoint riêng. */
-  const categories = useMemo(() => {
-    const found = new Set<string>();
-    response?.results.forEach((item) => item.categories.forEach((c) => found.add(c)));
-    return Array.from(found).sort();
-  }, [response]);
 
   const search = useCallback(
     (query: string, overrideSpace?: string) =>
@@ -80,16 +71,18 @@ export default function App() {
   );
 
   /**
-   * Nếu space hiện tại không hỗ trợ `image2image` (ví dụ vừa bấm một chip
-   * tiếng Việt, đặt space = `mclip-b32`, chỉ hỗ trợ text2image), request tìm
-   * bằng ảnh chắc chắn bị backend từ chối (400 `ModeNotSupportedError`), và
-   * `useSearch` xoá trắng cả grid kết quả để hiện lỗi — đúng đường đi mà spec
-   * gọi là ranh giới giữa "demo mượt" và "demo bị kẹt". Tự chuyển sang space
-   * `ready` đầu tiên hỗ trợ `image2image` (giống pattern `firstReady` ở effect
-   * phía trên) để không bao giờ gửi một request chắc chắn hỏng.
+   * If the current space does not support `image2image` (e.g. a Vietnamese
+   * example chip was just clicked, setting space = `mclip-b32`, which only
+   * supports text2image), an image search would certainly be rejected by the
+   * backend (400 `ModeNotSupportedError`), and `useSearch` would clear the whole
+   * result grid to show the error, which is the path the spec calls the line
+   * between a "smooth demo" and a "stuck demo". Automatically switch to the
+   * first `ready` space that supports `image2image` (same pattern as
+   * `firstReady` in the effect above) so a request that is bound to fail is
+   * never sent.
    *
-   * @returns space nên dùng để gọi `runSimilar`/`runImage`, cùng cờ `switched`
-   *   để báo cho người dùng biết là có đổi model.
+   * @returns The space to use for `runSimilar`/`runImage`, plus a `switched`
+   *   flag so the user can be told the model changed.
    */
   const resolveImageSpace = useCallback(
     (current: string): { space: string; switched: boolean } => {
@@ -107,7 +100,7 @@ export default function App() {
     [spaces],
   );
 
-  /** Đóng modal rồi chạy tìm ảnh tương tự bằng `image_id` của ảnh đang xem. */
+  /** Closes the modal, then runs a similar-image search using the `image_id` of the image being viewed. */
   const findSimilar = useCallback(
     (imageId: number) => {
       setSelected(null);
@@ -115,7 +108,7 @@ export default function App() {
       if (target.switched) {
         setSpace(target.space);
         setSpaceSwitchNotice(
-          `Đã tự chuyển sang model "${target.space}" vì "${space}" không hỗ trợ tìm ảnh tương tự.`,
+          `Automatically switched to model "${target.space}" because "${space}" does not support similar-image search.`,
         );
       } else {
         setSpaceSwitchNotice(null);
@@ -132,16 +125,16 @@ export default function App() {
     [runSimilar, resolveImageSpace, space, params],
   );
 
-  /** Dùng chung cho ảnh upload (chọn file / kéo-thả / dán) — cùng cơ chế tự
-   * chuyển space như `findSimilar` ở trên, vì cả hai đều gọi `/search/image`
-   * và có thể rơi vào cùng space không hỗ trợ `image2image`. */
+  /** Shared by uploaded images (file picker / drag-drop / paste), with the same
+   * automatic space switching as `findSimilar` above, since both call
+   * `/search/image` and can land on a space that does not support `image2image`. */
   const searchByImage = useCallback(
     (file: File) => {
       const target = resolveImageSpace(space);
       if (target.switched) {
         setSpace(target.space);
         setSpaceSwitchNotice(
-          `Đã tự chuyển sang model "${target.space}" vì "${space}" không hỗ trợ tìm bằng ảnh.`,
+          `Automatically switched to model "${target.space}" because "${space}" does not support search by image.`,
         );
       } else {
         setSpaceSwitchNotice(null);
@@ -161,10 +154,7 @@ export default function App() {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-5 bg-slate-900 p-6 text-slate-100">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Tìm kiếm ngữ nghĩa trên COCO val2017</h1>
-        <p className="text-sm text-slate-400">
-          Tìm bằng câu chữ hoặc bằng một tấm ảnh, trên 5.000 ảnh.
-        </p>
+        <h1 className="text-2xl font-semibold">Image Search on COCO</h1>
       </header>
 
       {bootError && (
@@ -183,6 +173,10 @@ export default function App() {
           }}
           label="Model"
         />
+        <ResultCountSelect
+          value={params.k}
+          onChange={(k) => setParams({ ...params, k })}
+        />
         <button
           className={`rounded-md border px-3 py-2 text-sm ${
             comparing
@@ -192,7 +186,7 @@ export default function App() {
           type="button"
           onClick={() => setComparing((value) => !value)}
         >
-          {comparing ? "Đang ở chế độ so sánh" : "So sánh hai model"}
+          {comparing ? "Comparing two models" : "Compare two models"}
         </button>
       </div>
 
@@ -202,16 +196,6 @@ export default function App() {
         disabled={loading}
       />
 
-      <ExampleChips
-        examples={examples}
-        onPick={(example) => {
-          setSpace(example.space);
-          setSpaceSwitchNotice(null);
-          search(example.query, example.space);
-        }}
-      />
-
-      <AdvancedPanel params={params} onChange={setParams} categories={categories} />
       {spaceSwitchNotice && (
         <p className="rounded-md border border-indigo-800 bg-indigo-950/60 px-3 py-2 text-sm text-indigo-200">
           {spaceSwitchNotice}

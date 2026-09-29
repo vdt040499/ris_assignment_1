@@ -15,17 +15,17 @@ export default function StatusBar({ response, error, loading }: Props) {
     );
   }
   if (loading) {
-    return <p className="text-sm text-slate-400">Đang tìm…</p>;
+    return <p className="text-sm text-slate-400">Searching…</p>;
   }
   if (!response) {
-    return <p className="text-sm text-slate-500">Nhập câu chữ hoặc đưa vào một tấm ảnh.</p>;
+    return <p className="text-sm text-slate-500">Enter a text query or add an image.</p>;
   }
   return (
     <p className="text-sm text-slate-400">
       <span className="text-slate-200">{response.space}</span> ·{" "}
-      {response.results.length}/{response.total_searched} ảnh ·{" "}
+      {response.results.length}/{response.total_searched} images ·{" "}
       {response.exact ? "exact" : "HNSW"} · {response.latency_ms.toFixed(1)}ms (encode{" "}
-      {response.encode_ms.toFixed(1)} + tìm {response.search_ms.toFixed(1)})
+      {response.encode_ms.toFixed(1)} + search {response.search_ms.toFixed(1)})
     </p>
   );
 }

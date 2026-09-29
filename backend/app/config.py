@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     allowed_image_types: str = "image/jpeg,image/png,image/webp"
 
     model_cache_size: int = 2
+    #: Các space nạp sẵn model lúc server khởi động, phân tách bằng dấu phẩy.
+    #: Rỗng = không warm-up (mặc định, để test/CLI không phải tải model).
+    warmup_spaces: str = ""
+    #: Cạnh (px) của ảnh giả dùng để warm-up encoder chỉ nhận ảnh (vd resnet50).
+    warmup_image_size: int = 224
     device: str = "cpu"
     batch_size: int = 32
     thumb_size: int = 256
@@ -88,6 +93,10 @@ class Settings(BaseSettings):
     @property
     def allowed_image_types_set(self) -> frozenset[str]:
         return frozenset(t.strip() for t in self.allowed_image_types.split(",") if t.strip())
+
+    @property
+    def warmup_spaces_list(self) -> list[str]:
+        return [s.strip() for s in self.warmup_spaces.split(",") if s.strip()]
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -19,8 +19,8 @@ export default function ModelSelect({ spaces, value, onChange, label }: Props) {
         {spaces.map((space) => (
           <option key={space.name} value={space.name} disabled={!space.ready}>
             {space.name}
-            {space.languages.includes("vi") ? " · tiếng Việt" : ""}
-            {space.ready ? "" : " (chưa build index)"}
+            {space.languages.includes("vi") ? " · Vietnamese" : ""}
+            {space.ready ? "" : " (index not built)"}
           </option>
         ))}
       </select>

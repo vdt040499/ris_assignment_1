@@ -1,6 +1,6 @@
 import type { Filters } from "../types";
 
-/** Hình dạng state có kiểm soát của panel nâng cao — App sở hữu state này. */
+/** Shape of the controlled state of the advanced panel; App owns this state. */
 export interface AdvancedParams {
   k: number;
   exact: boolean;
@@ -17,10 +17,10 @@ interface Props {
 export default function AdvancedPanel({ params, onChange, categories }: Props) {
   return (
     <details className="rounded-lg border border-slate-700 p-3 text-sm">
-      <summary className="cursor-pointer text-slate-300">Tuỳ chọn nâng cao</summary>
+      <summary className="cursor-pointer text-slate-300">Advanced options</summary>
       <div className="mt-3 flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-slate-400">Số kết quả: {params.k}</span>
+          <span className="text-slate-400">Results: {params.k}</span>
           <input
             type="range"
             min={5}
@@ -37,7 +37,7 @@ export default function AdvancedPanel({ params, onChange, categories }: Props) {
             checked={params.exact}
             onChange={(event) => onChange({ ...params, exact: event.target.checked })}
           />
-          Tìm chính xác (tắt để dùng HNSW)
+          Exact search (turn off to use HNSW)
         </label>
 
         <label className="flex flex-col gap-1">
@@ -56,7 +56,7 @@ export default function AdvancedPanel({ params, onChange, categories }: Props) {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-slate-400">Lọc theo category</span>
+          <span className="text-slate-400">Filter by category</span>
           <select
             className="h-24 w-48 rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-slate-100"
             multiple

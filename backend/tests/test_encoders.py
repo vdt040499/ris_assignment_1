@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from app.config import Settings
-from app.encoders import build_encoder, get_encoder, reset_encoder_cache
+from app.encoders import build_encoder, get_encoder, reset_encoder_cache, warmup
 from app.encoders.base import LruEncoderCache
 from app.errors import ModeNotSupportedError, UnknownSpaceError
 from app.registry import get_space
@@ -109,3 +109,32 @@ def test_empty_input_returns_empty_matrix_without_loading(settings):
 
 def test_get_encoder_uses_the_shared_cache(settings):
     assert get_encoder("clip-b32", settings) is get_encoder("clip-b32", settings)
+
+
+def test_warmup_encodes_one_sample_per_space_and_skips_bm25(monkeypatch):
+    calls = []
+
+    class Recorder(FakeEncoder):
+        def encode_texts(self, texts):
+            calls.append((self.name, "text"))
+            return super().encode_texts(texts)
+
+        def encode_images(self, images):
+            calls.append((self.name, "image"))
+            return super().encode_images(images)
+
+    monkeypatch.setattr("app.encoders.build_encoder", lambda name, settings=None: Recorder(name))
+    cfg = Settings(_env_file=None, warmup_spaces="clip-b32, resnet50,bm25-cap")
+    assert warmup(cfg) == ["clip-b32", "resnet50"]
+    assert calls == [("clip-b32", "text"), ("resnet50", "image")]
+
+
+def test_warmup_survives_a_failing_space(monkeypatch):
+    def factory(name, settings=None):
+        if name == "clip-b32":
+            raise OSError("offline")
+        return FakeEncoder(name)
+
+    monkeypatch.setattr("app.encoders.build_encoder", factory)
+    cfg = Settings(_env_file=None, warmup_spaces="clip-b32,mclip-b32")
+    assert warmup(cfg) == ["mclip-b32"]
