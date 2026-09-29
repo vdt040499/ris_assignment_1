@@ -152,7 +152,7 @@ export default function App() {
   );
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-5 bg-slate-900 p-6 text-slate-100">
+    <main className="mx-auto flex min-h-screen w-full max-w-screen-2xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Image Search on COCO</h1>
       </header>
