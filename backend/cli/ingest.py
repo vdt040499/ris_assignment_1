@@ -1,7 +1,7 @@
-"""Tải COCO val2017 và sinh corpus.jsonl + thumbnail.
+"""Download COCO val2017 and generate corpus.jsonl + thumbnails.
 
-Chạy một lần. Mọi bước đều resume được: file đã tải không tải lại, thumbnail
-đã có không sinh lại.
+Run once. Every step is resumable: a file already downloaded is not
+downloaded again, a thumbnail already generated is not regenerated.
 """
 
 import argparse
@@ -26,7 +26,7 @@ INSTANCES_FILE = "instances_val2017.json"
 
 @dataclass
 class IngestStats:
-    """Số liệu đếm được từ dữ liệu thật, để báo cáo không phải giả định."""
+    """Figures counted from the real data, so the report doesn't have to assume anything."""
 
     n_images: int
     n_captions: int
@@ -36,10 +36,11 @@ class IngestStats:
 
 
 def download_if_missing(url: str, dest: Path) -> bool:
-    """Tải ``url`` về ``dest`` nếu chưa có. Trả True nếu lần này thật sự tải.
+    """Download ``url`` to ``dest`` if not already present. Returns True if a download actually happened this time.
 
-    Ghi vào file ``.part`` rồi mới đổi tên, nên một lần tải bị ngắt không để
-    lại file hỏng trông như đã xong. Zip tải xong được kiểm tra tính toàn vẹn.
+    Writes to a ``.part`` file before renaming it, so an interrupted download
+    doesn't leave behind a corrupt file that looks complete. A downloaded zip
+    is checked for integrity.
     """
     if dest.exists():
         return False
@@ -54,13 +55,13 @@ def download_if_missing(url: str, dest: Path) -> bool:
         with zipfile.ZipFile(part) as zf:
             if zf.testzip() is not None:
                 part.unlink()
-                raise RuntimeError(f"Zip tải về bị hỏng: {url}")
+                raise RuntimeError(f"Downloaded zip is corrupt: {url}")
     part.rename(dest)
     return True
 
 
 def extract_zip(zip_path: Path, dest_dir: Path, marker: Path) -> bool:
-    """Giải nén nếu ``marker`` chưa tồn tại. Trả True nếu lần này thật sự giải nén."""
+    """Extract if ``marker`` doesn't exist yet. Returns True if extraction actually happened this time."""
     if marker.exists():
         return False
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -70,11 +71,12 @@ def extract_zip(zip_path: Path, dest_dir: Path, marker: Path) -> bool:
 
 
 def build_corpus(annotations_dir: Path, out_path: Path) -> IngestStats:
-    """Gộp caption và category của COCO thành corpus.jsonl.
+    """Merge COCO captions and categories into corpus.jsonl.
 
-    Ảnh không có annotation category vẫn được giữ với mảng rỗng — bỏ chúng đi
-    sẽ làm lệch mẫu số của mọi metric sau này. Ảnh không có caption nào thì bị
-    loại, vì nó không dùng được cho cả eval lẫn baseline BM25.
+    Images with no category annotation are still kept, with an empty array —
+    dropping them would skew the denominator of every metric downstream.
+    Images with no captions at all are excluded, since they can't be used for
+    either evaluation or the BM25 baseline.
     """
     captions_raw = json.loads((annotations_dir / CAPTIONS_FILE).read_text(encoding="utf-8"))
     instances_raw = json.loads((annotations_dir / INSTANCES_FILE).read_text(encoding="utf-8"))
@@ -123,7 +125,7 @@ def build_corpus(annotations_dir: Path, out_path: Path) -> IngestStats:
 
 
 def make_thumbnails(corpus: Corpus, images_dir: Path, thumbs_dir: Path, size: int) -> int:
-    """Sinh thumbnail cạnh dài ``size`` px. Trả về số thumbnail mới tạo lần này."""
+    """Generate thumbnails with long edge ``size`` px. Returns the number of thumbnails newly created this time."""
     thumbs_dir.mkdir(parents=True, exist_ok=True)
     made = 0
     for record in corpus.records:
@@ -139,9 +141,9 @@ def make_thumbnails(corpus: Corpus, images_dir: Path, thumbs_dir: Path, size: in
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Tải COCO val2017 và sinh corpus.jsonl")
+    parser = argparse.ArgumentParser(description="Download COCO val2017 and generate corpus.jsonl")
     parser.add_argument("--skip-download", action="store_true",
-                        help="Bỏ qua bước tải, dùng file đã có trong DATA_DIR")
+                        help="Skip the download step, use files already in DATA_DIR")
     args = parser.parse_args(argv)
 
     settings: Settings = get_settings()
@@ -161,10 +163,10 @@ def main(argv: list[str] | None = None) -> int:
     made = make_thumbnails(corpus, settings.images_dir, settings.thumbs_dir,
                            settings.thumb_size)
 
-    print(f"corpus: {stats.n_images} ảnh, {stats.n_captions} caption "
-          f"(mỗi ảnh {stats.min_captions}-{stats.max_captions})")
-    print(f"ảnh không có category: {stats.n_without_category}")
-    print(f"thumbnail mới sinh: {made}")
+    print(f"corpus: {stats.n_images} images, {stats.n_captions} captions "
+          f"({stats.min_captions}-{stats.max_captions} per image)")
+    print(f"images without category: {stats.n_without_category}")
+    print(f"newly generated thumbnails: {made}")
     return 0
 
 

@@ -1,8 +1,9 @@
-"""Test tải model thật. Chạy bằng: python -m pytest -m integration
+"""Test that loads real models. Run with: python -m pytest -m integration
 
-Test `test_multilingual_shares_the_clip_space` là **cửa chặn**: nếu nó đỏ thì
-giả định "mclip-b32 dùng lại collection ảnh của clip-b32" sai, và phải sửa
-registry cho mclip-b32 có collection riêng TRƯỚC khi build index.
+The test `test_multilingual_shares_the_clip_space` is a **gate**: if it goes
+red, the assumption that "mclip-b32 reuses clip-b32's image collection" is
+wrong, and the registry must be fixed to give mclip-b32 its own collection
+BEFORE building the index.
 """
 
 import numpy as np
@@ -52,15 +53,15 @@ def test_siglip_reports_its_own_dimension(settings):
 
 
 def test_multilingual_shares_the_clip_space(settings):
-    """Cửa chặn cho giả định ở spec §5.3."""
+    """Gate for the assumption in spec §5.3."""
     clip = build_encoder("clip-b32", settings)
     mclip = build_encoder("mclip-b32", settings)
     a = clip.encode_texts([SAMPLE_CAPTION])[0]
     b = mclip.encode_texts([SAMPLE_CAPTION])[0]
     cosine = float(np.dot(a, b))
     assert cosine > MULTILINGUAL_ALIGNMENT_THRESHOLD, (
-        f"cosine={cosine:.3f} — mclip-b32 KHÔNG chung không gian với clip-b32. "
-        "Sửa registry: cho mclip-b32 collection_suffix riêng và builds_index=True."
+        f"cosine={cosine:.3f} — mclip-b32 does NOT share a space with clip-b32. "
+        "Fix the registry: give mclip-b32 its own collection_suffix and builds_index=True."
     )
 
 

@@ -1,7 +1,7 @@
-"""Đọc/ghi corpus.jsonl — nguồn sự thật duy nhất của hệ.
+"""Read/write corpus.jsonl — the system's single source of truth.
 
-Sau bước ingest, không thành phần nào đọc lại file COCO JSON gốc; tất cả đi
-qua module này.
+After the ingest step, no component reads the original COCO JSON file again;
+everything goes through this module.
 """
 
 import json
@@ -15,7 +15,7 @@ from app.errors import CorpusError
 
 
 class CorpusRecord(BaseModel):
-    """Một ảnh trong corpus kèm caption và metadata category của nó."""
+    """A single image in the corpus with its captions and category metadata."""
 
     image_id: int
     file_name: str
@@ -30,13 +30,13 @@ class CorpusRecord(BaseModel):
     def _clean_captions(cls, value: list[str]) -> list[str]:
         cleaned = [c.strip() for c in value if c and c.strip()]
         if not cleaned:
-            raise ValueError("record phải có ít nhất một caption không rỗng")
+            raise ValueError("record must have at least one non-empty caption")
         return cleaned
 
 
 @dataclass
 class Corpus:
-    """Toàn bộ corpus nạp trong RAM, kèm chỉ mục tra nhanh theo image_id."""
+    """The entire corpus loaded in RAM, with a fast lookup index by image_id."""
 
     records: list[CorpusRecord]
     by_image_id: dict[int, CorpusRecord] = field(init=False, repr=False)
@@ -51,10 +51,11 @@ class Corpus:
         return [r.image_id for r in self.records]
 
     def caption_pairs(self) -> list[tuple[int, int, str]]:
-        """Dàn phẳng mọi caption thành ``(image_id, caption_index, text)``.
+        """Flatten every caption into ``(image_id, caption_index, text)``.
 
-        Dùng cho cả việc build collection caption và việc sinh query set
-        text→ảnh, nên hai bên luôn đánh cùng một chỉ số cho cùng một caption.
+        Used both for building the caption collection and for generating the
+        text→image query set, so both sides always assign the same index to
+        the same caption.
         """
         return [
             (rec.image_id, idx, text)
@@ -64,7 +65,7 @@ class Corpus:
 
 
 def record_payload(record: CorpusRecord) -> dict:
-    """Payload gắn kèm mỗi point Qdrant. Giữ đúng các field cần để filter và hiển thị."""
+    """Payload attached to each Qdrant point. Keeps exactly the fields needed for filtering and display."""
     return {
         "image_id": record.image_id,
         "file_name": record.file_name,
@@ -80,24 +81,24 @@ CAPTION_ID_STRIDE = 100
 
 
 def caption_point_id(image_id: int, caption_index: int) -> int:
-    """Id point Qdrant cho một caption.
+    """Qdrant point id for a caption.
 
-    Trộn image_id với chỉ số caption theo stride cố định, nên id trong
-    collection caption không bao giờ đụng id trong collection ảnh và từ một id
-    caption luôn suy lại được ảnh gốc.
+    Combines image_id with the caption index using a fixed stride, so ids in
+    the caption collection never collide with ids in the image collection,
+    and a caption id can always be traced back to its source image.
 
-    :raises ValueError: nếu ``caption_index`` >= CAPTION_ID_STRIDE, vì khi đó
-        công thức mất tính đơn ánh.
+    :raises ValueError: if ``caption_index`` >= CAPTION_ID_STRIDE, since the
+        formula would then lose its injectivity.
     """
     if not 0 <= caption_index < CAPTION_ID_STRIDE:
         raise ValueError(
-            f"caption_index {caption_index} ngoài khoảng [0, {CAPTION_ID_STRIDE})"
+            f"caption_index {caption_index} is out of range [0, {CAPTION_ID_STRIDE})"
         )
     return image_id * CAPTION_ID_STRIDE + caption_index
 
 
 def caption_payload(record: CorpusRecord, caption_index: int) -> dict:
-    """Payload cho một point caption: metadata của ảnh + chính caption đó."""
+    """Payload for a caption point: the image's metadata + the caption itself."""
     return {
         **record_payload(record),
         "caption_index": caption_index,
@@ -106,7 +107,7 @@ def caption_payload(record: CorpusRecord, caption_index: int) -> dict:
 
 
 def write_corpus(records: Iterable[CorpusRecord], path: Path) -> int:
-    """Ghi corpus ra JSONL. Trả về số record đã ghi."""
+    """Write the corpus out as JSONL. Returns the number of records written."""
     path.parent.mkdir(parents=True, exist_ok=True)
     count = 0
     with path.open("w", encoding="utf-8") as fh:
@@ -117,13 +118,14 @@ def write_corpus(records: Iterable[CorpusRecord], path: Path) -> int:
 
 
 def load_corpus(path: Path) -> Corpus:
-    """Nạp corpus.jsonl và validate từng dòng.
+    """Load corpus.jsonl and validate each line.
 
-    :raises CorpusError: file không tồn tại, rỗng, hoặc có dòng sai schema —
-        thông báo nêu rõ số dòng để sửa được ngay.
+    :raises CorpusError: the file doesn't exist, is empty, or has a line with
+        an invalid schema — the message states the line number so it can be
+        fixed right away.
     """
     if not path.exists():
-        raise CorpusError(f"Không thấy {path}. Chạy: python tasks.py ingest")
+        raise CorpusError(f"{path} not found. Run: python tasks.py ingest")
     records: list[CorpusRecord] = []
     with path.open(encoding="utf-8") as fh:
         for lineno, line in enumerate(fh, start=1):
@@ -133,7 +135,7 @@ def load_corpus(path: Path) -> Corpus:
             try:
                 records.append(CorpusRecord.model_validate_json(line))
             except ValidationError as exc:
-                raise CorpusError(f"{path} sai schema ở dòng {lineno}: {exc}") from exc
+                raise CorpusError(f"{path} has an invalid schema at line {lineno}: {exc}") from exc
     if not records:
-        raise CorpusError(f"{path} rỗng. Chạy lại: python tasks.py ingest")
+        raise CorpusError(f"{path} is empty. Re-run: python tasks.py ingest")
     return Corpus(records=records)

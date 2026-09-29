@@ -1,7 +1,7 @@
-"""Metric retrieval. Hàm thuần, không biết gì về Qdrant hay model.
+"""Retrieval metrics. Pure functions, with no knowledge of Qdrant or models.
 
-Quy ước chung: ``rankings[i]`` là danh sách image_id đã xếp hạng cho query
-thứ ``i``, phần tử đầu là kết quả hạng 1.
+General convention: ``rankings[i]`` is the ranked list of image_ids for query
+``i``, with the first element being the rank-1 result.
 """
 
 from collections.abc import Sequence
@@ -10,17 +10,17 @@ from collections.abc import Sequence
 def _check_lengths(rankings: Sequence, gold: Sequence) -> None:
     if len(rankings) != len(gold):
         raise ValueError(
-            f"số ranking ({len(rankings)}) khác số nhãn đúng ({len(gold)})"
+            f"number of rankings ({len(rankings)}) differs from number of gold labels ({len(gold)})"
         )
 
 
 def recall_at_k(
     rankings: Sequence[Sequence[int]], gold: Sequence[int], ks: Sequence[int]
 ) -> dict[int, float]:
-    """Recall@k cho bài toán một-nhãn-đúng (mỗi caption có đúng một ảnh gốc).
+    """Recall@k for the single-correct-label problem (each caption has exactly one source image).
 
-    :return: dict ``{k: tỉ lệ query có ảnh gốc nằm trong top-k}``.
-    :raises ValueError: nếu số ranking khác số nhãn đúng.
+    :return: dict ``{k: fraction of queries whose source image is within the top-k}``.
+    :raises ValueError: if the number of rankings differs from the number of gold labels.
     """
     _check_lengths(rankings, gold)
     result: dict[int, float] = {}

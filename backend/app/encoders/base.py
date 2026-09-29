@@ -1,4 +1,4 @@
-"""Giao diện encoder và cache LRU dùng chung."""
+"""Encoder interface and shared LRU cache."""
 
 import threading
 from collections import OrderedDict
@@ -9,7 +9,7 @@ import numpy as np
 
 
 class Encoder(Protocol):
-    """Mọi encoder trả ma trận ``(n, dim)`` float32, đã normalize nếu space yêu cầu."""
+    """Every encoder returns an ``(n, dim)`` float32 matrix, normalized if the space requires it."""
 
     name: str
     dim: int
@@ -20,35 +20,35 @@ class Encoder(Protocol):
 
 
 class LruEncoderCache:
-    """Giữ tối đa ``maxsize`` encoder trong RAM, loại bỏ cái ít dùng nhất.
+    """Keeps at most ``maxsize`` encoders in RAM, evicting the least recently used.
 
-    Việc tạo encoder xảy ra **bên trong** lock. Điều đó khiến một request phải
-    chờ trong lúc model đang nạp, nhưng đổi lại hai request đồng thời cho cùng
-    một model không nạp hai bản — với model 600MB trên máy 16GB thì tránh nhân
-    đôi bộ nhớ quan trọng hơn tránh chờ.
+    Encoder creation happens **inside** the lock. That means a request has to
+    wait while a model is loading, but in exchange two concurrent requests for
+    the same model won't load two copies — with a 600MB model on a 16GB machine,
+    avoiding doubled memory use matters more than avoiding the wait.
     """
 
     def __init__(self, maxsize: int, factory: Callable[[str], Encoder]) -> None:
-        """Khởi tạo cache.
+        """Initialize the cache.
 
-        :param maxsize: số encoder tối đa được giữ trong RAM cùng lúc.
-        :param factory: hàm dựng encoder từ tên space, gọi khi cache miss.
-        :raises ValueError: nếu ``maxsize`` nhỏ hơn 1.
+        :param maxsize: maximum number of encoders kept in RAM at once.
+        :param factory: function that builds an encoder from a space name, called on a cache miss.
+        :raises ValueError: if ``maxsize`` is less than 1.
         """
         if maxsize < 1:
-            raise ValueError(f"maxsize phải >= 1, nhận được {maxsize}")
+            raise ValueError(f"maxsize must be >= 1, got {maxsize}")
         self._maxsize = maxsize
         self._factory = factory
         self._items: OrderedDict[str, Encoder] = OrderedDict()
         self._lock = threading.RLock()
 
     def get(self, key: str) -> Encoder:
-        """Trả encoder cho ``key``, dựng mới qua factory nếu chưa có trong cache.
+        """Return the encoder for ``key``, building a new one via the factory if not cached.
 
-        Toàn bộ thao tác (kiểm tra, dựng, chèn, loại bỏ LRU) nằm trong một lock
-        duy nhất, nên hai luồng gọi đồng thời với cùng key sẽ không dựng model
-        hai lần — luồng thứ hai đợi luồng thứ nhất xong rồi nhận lại đúng
-        instance đó.
+        The entire operation (check, build, insert, evict LRU) happens inside a
+        single lock, so two threads calling concurrently with the same key won't
+        build the model twice — the second thread waits for the first to finish
+        and then receives that same instance.
         """
         with self._lock:
             if key in self._items:
@@ -61,12 +61,12 @@ class LruEncoderCache:
             return encoder
 
     def keys(self) -> list[str]:
-        """Trả danh sách key hiện có, theo thứ tự từ ít dùng gần đây nhất đến mới nhất."""
+        """Return the list of current keys, ordered from least recently used to most recently used."""
         with self._lock:
             return list(self._items)
 
     def clear(self) -> None:
-        """Xoá toàn bộ encoder khỏi cache."""
+        """Remove all encoders from the cache."""
         with self._lock:
             self._items.clear()
 

@@ -1,8 +1,8 @@
-"""Điều phối tìm kiếm.
+"""Search orchestration.
 
-Module này không biết CLIP hay SigLIP là gì: nó hỏi registry space nào dùng
-backend nào, gọi encoder tương ứng, rồi trả về một hình dạng response duy nhất
-cho cả hai chiều truy vấn.
+This module doesn't know what CLIP or SigLIP are: it asks the registry which
+backend a space uses, calls the corresponding encoder, then returns a single
+unified response shape for both query directions.
 """
 
 import time
@@ -45,10 +45,10 @@ THUMB_URL_PREFIX = "/thumbs"
 
 @dataclass
 class SearchService:
-    """Một instance dùng chung cho cả process API.
+    """A single instance shared across the whole API process.
 
-    :param encoder_factory: điểm tiêm phụ thuộc — test truyền encoder giả vào
-        đây để kiểm tra điều phối mà không tải model thật.
+    :param encoder_factory: dependency-injection point — tests pass a fake
+        encoder here to test the orchestration without loading a real model.
     """
 
     settings: Settings
@@ -58,39 +58,39 @@ class SearchService:
     _bm25: Bm25Retriever | None = field(default=None, init=False, repr=False)
 
     def _resolve_k(self, k: int | None) -> int:
-        """Áp mặc định và trần cấu hình cho top-k.
+        """Apply the configured default and cap for top-k.
 
-        :raises ValidationRangeError: nếu k <= 0 hoặc vượt ``MAX_TOP_K``.
+        :raises ValidationRangeError: if k <= 0 or exceeds ``MAX_TOP_K``.
         """
         resolved = self.settings.top_k_default if k is None else k
-        # Tầng HTTP (`Form(..., ge=1)` cho /search/image, `Field(ge=1)` cho
-        # TextSearchRequest) đã chặn k<=0 trước khi tới đây, nhưng service này
-        # cũng được gọi trực tiếp (CLI, test) mà không qua tầng đó — kiểm tra
-        # lại ở đây để k<=0 luôn thành 422 (ValidationRangeError), không bao
-        # giờ lọt xuống Qdrant rồi bị hiểu nhầm thành "Qdrant is down" (finding
-        # I5).
+        # The HTTP layer (`Form(..., ge=1)` for /search/image, `Field(ge=1)`
+        # for TextSearchRequest) already blocks k<=0 before it gets here, but
+        # this service is also called directly (CLI, tests) without going
+        # through that layer — re-check here so k<=0 always becomes a 422
+        # (ValidationRangeError), never slipping down to Qdrant and being
+        # misread as "Qdrant is down" (finding I5).
         if resolved <= 0:
-            raise ValidationRangeError(f"k={resolved} phải >= 1")
+            raise ValidationRangeError(f"k={resolved} must be >= 1")
         if resolved > self.settings.max_top_k:
             raise ValidationRangeError(
-                f"k={resolved} vượt giới hạn MAX_TOP_K={self.settings.max_top_k}"
+                f"k={resolved} exceeds the MAX_TOP_K={self.settings.max_top_k} limit"
             )
         return resolved
 
     @staticmethod
     def _require_mode(space: SpaceSpec, mode: str) -> None:
-        """:raises ModeNotSupportedError: nếu space không làm được chiều này."""
+        """:raises ModeNotSupportedError: if the space can't handle this direction."""
         if mode not in space.modes:
             raise ModeNotSupportedError(
-                f"Space '{space.name}' không hỗ trợ '{mode}'. "
-                f"Hỗ trợ: {', '.join(space.modes)}"
+                f"Space '{space.name}' does not support '{mode}'. "
+                f"Supported: {', '.join(space.modes)}"
             )
 
     def _allowed_ids(self, filters: Filters) -> set[int] | None:
-        """Tập image_id thoả filter, tính từ corpus.
+        """Set of image_ids satisfying the filter, computed from the corpus.
 
-        Chỉ dùng cho backend BM25 — nó không có payload filter như Qdrant, nên
-        việc lọc phải làm ở phía ta.
+        Only used for the BM25 backend — it doesn't have a payload filter like
+        Qdrant, so the filtering has to be done on our side.
         """
         if not filters.categories and not filters.supercategories:
             return None
@@ -104,35 +104,35 @@ class SearchService:
         }
 
     def _bm25_retriever(self) -> Bm25Retriever:
-        """Nạp lười index BM25.
+        """Lazily load the BM25 index.
 
-        :raises IndexNotBuiltError: nếu chưa build, kèm đúng lệnh cần chạy.
+        :raises IndexNotBuiltError: if it hasn't been built yet, including the exact command to run.
         """
         if self._bm25 is None:
             try:
                 self._bm25 = Bm25Retriever.load(self.settings.bm25_path, self.corpus)
             except FileNotFoundError as exc:
                 raise IndexNotBuiltError(
-                    "Chưa build index BM25. Chạy: python tasks.py build --space bm25-cap"
+                    "BM25 index not built yet. Run: python tasks.py build --space bm25-cap"
                 ) from exc
         return self._bm25
 
     def _require_index(self, space: SpaceSpec, target: str) -> tuple[str, int]:
-        """Trả về ``(tên collection, số point)``.
+        """Returns ``(collection name, point count)``.
 
-        :raises IndexNotBuiltError: nếu collection rỗng hoặc chưa tồn tại.
+        :raises IndexNotBuiltError: if the collection is empty or doesn't exist yet.
         """
         name = collection_name(space, self.settings, target=target)
         count = self.store.count(name)
         if count == 0:
             raise IndexNotBuiltError(
-                f"Space '{space.name}' (target={target}) chưa có index. "
-                f"Chạy: python tasks.py build --space {space.name}"
+                f"Space '{space.name}' (target={target}) has no index yet. "
+                f"Run: python tasks.py build --space {space.name}"
             )
         return name, count
 
     def _items(self, hits: list[Hit], target: str) -> list[SearchResultItem]:
-        """Đổi Hit thành item response. Một hình dạng duy nhất cho mọi chiều."""
+        """Convert a Hit into a response item. A single shape for every direction."""
         items: list[SearchResultItem] = []
         for rank, hit in enumerate(hits, start=1):
             payload = hit.payload
@@ -154,7 +154,7 @@ class SearchService:
         return items
 
     def search_text(self, request: TextSearchRequest) -> SearchResponse:
-        """Tìm bằng câu chữ. Trả top-k ảnh, hoặc top-k caption nếu target='caption'."""
+        """Search by text. Returns top-k images, or top-k captions if target='caption'."""
         started = time.perf_counter()
         space = get_space(request.space)
         mode = MODE_IMAGE2TEXT if request.target == "caption" else MODE_TEXT2IMAGE
@@ -214,18 +214,18 @@ class SearchService:
         image: Any = None,
         image_id: int | None = None,
     ) -> SearchResponse:
-        """Tìm bằng ảnh: ảnh upload, hoặc một ảnh đã có trong corpus.
+        """Search by image: an uploaded image, or an image already in the corpus.
 
-        Khi tìm bằng ``image_id``, ảnh query bị loại khỏi kết quả — nó luôn tự
-        khớp với chính mình ở hạng 1, vừa chiếm một suất vô nghĩa trên UI vừa
-        làm phồng P@k khi đo.
+        When searching by ``image_id``, the query image is excluded from the
+        results — it would always match itself at rank 1, which both wastes a
+        meaningless slot in the UI and inflates P@k when measuring.
 
-        :raises BadRequestError: nếu không có đúng một trong ``image``/``image_id``,
-            hoặc ``image_id`` không có trong corpus.
+        :raises BadRequestError: if there isn't exactly one of ``image``/``image_id``,
+            or ``image_id`` isn't in the corpus.
         """
         started = time.perf_counter()
         if (image is None) == (image_id is None):
-            raise BadRequestError("Cần đúng một trong hai: file ảnh hoặc image_id")
+            raise BadRequestError("Need exactly one of: an image file or an image_id")
 
         spec = get_space(space)
         self._require_mode(spec, MODE_IMAGE2IMAGE)
@@ -234,7 +234,7 @@ class SearchService:
         if image_id is not None:
             record = self.corpus.by_image_id.get(image_id)
             if record is None:
-                raise BadRequestError(f"image_id {image_id} không có trong corpus")
+                raise BadRequestError(f"image_id {image_id} is not in the corpus")
             image = load_corpus_image(
                 self.settings.images_dir / record.file_name, self.settings
             )
@@ -270,7 +270,7 @@ class SearchService:
         )
 
     def space_infos(self) -> list[SpaceInfo]:
-        """Liệt kê mọi space kèm trạng thái index, để frontend dựng dropdown."""
+        """List every space along with its index status, for the frontend to build a dropdown."""
         infos: list[SpaceInfo] = []
         for space in SPACES.values():
             if space.backend == BACKEND_BM25:

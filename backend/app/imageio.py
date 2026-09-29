@@ -1,9 +1,9 @@
-"""Chuẩn hoá ảnh upload trước khi đưa vào encoder.
+"""Normalize uploaded images before feeding them into the encoder.
 
-Ảnh người dùng gửi lên không giống ảnh trong dataset: có thể là PNG trong
-suốt, ảnh xám từ máy scan, ảnh CMYK từ nhà in, hoặc ảnh điện thoại 12MP nằm
-ngang vì EXIF. Encoder chỉ nhận RGB ở kích thước hợp lý, nên mọi việc quy về
-một dạng chuẩn xảy ra ở đây và chỉ ở đây.
+Images users upload don't look like images in the dataset: they can be
+transparent PNGs, grayscale scans, CMYK images from a print shop, or 12MP
+phone photos rotated by EXIF. The encoder only accepts RGB at a reasonable
+size, so all the work of converting to a standard form happens here, and only here.
 """
 
 import io
@@ -16,10 +16,11 @@ from app.errors import BadImageError, ImageTooLargeError
 
 
 def downscale(image: Image.Image, max_pixels: int) -> Image.Image:
-    """Thu nhỏ ảnh về dưới ``max_pixels`` pixel, giữ đúng tỉ lệ khung.
+    """Downscale the image to under ``max_pixels`` pixels, preserving the aspect ratio.
 
-    Trả về chính ảnh đầu vào nếu nó đã đủ nhỏ. Cạnh nhỏ nhất luôn còn ít nhất
-    1 pixel, nên ảnh cực dẹt (vd 1000×2) không bị co thành rỗng.
+    Returns the input image itself if it's already small enough. The
+    smallest edge always keeps at least 1 pixel, so an extremely flat image
+    (e.g. 1000×2) doesn't shrink to nothing.
 
     :param image: PIL Image object to potentially downscale.
     :param max_pixels: Maximum total pixel count allowed (width × height).
@@ -36,33 +37,33 @@ def downscale(image: Image.Image, max_pixels: int) -> Image.Image:
 def load_upload_image(
     data: bytes, content_type: str | None, settings: Settings
 ) -> Image.Image:
-    """Biến bytes upload thành ảnh RGB đã xoay đúng và đủ nhỏ để encode.
+    """Turn uploaded bytes into an RGB image, correctly oriented and small enough to encode.
 
     :param data: Raw image bytes to decode and normalize.
-    :param content_type: MIME type do client khai; ``None`` thì bỏ qua và chỉ
-        dựa vào việc bytes có giải mã được hay không.
+    :param content_type: MIME type declared by the client; ``None`` skips the
+        check and relies solely on whether the bytes can be decoded.
     :param settings: Configuration object containing upload limits and allowed types.
     :return: PIL Image in RGB mode, correctly oriented, and downscaled as needed.
-    :raises ImageTooLargeError: vượt ``MAX_UPLOAD_MB`` (kiểm tra trước khi giải
-        mã, để một file rác 500MB không bị nạp vào RAM). Also guards against
-        decompression bombs (small files with huge declared dimensions).
-    :raises BadImageError: content type không cho phép, hoặc bytes không phải ảnh.
+    :raises ImageTooLargeError: exceeds ``MAX_UPLOAD_MB`` (checked before
+        decoding, so a 500MB junk file never gets loaded into RAM). Also guards
+        against decompression bombs (small files with huge declared dimensions).
+    :raises BadImageError: content type is not allowed, or the bytes aren't a valid image.
     """
     if len(data) > settings.max_upload_bytes:
         raise ImageTooLargeError(
-            f"Ảnh {len(data) / 1024 / 1024:.1f}MB vượt giới hạn "
-            f"{settings.max_upload_mb}MB"
+            f"Image is {len(data) / 1024 / 1024:.1f}MB, exceeding the "
+            f"{settings.max_upload_mb}MB limit"
         )
     if content_type and content_type not in settings.allowed_image_types_set:
         raise BadImageError(
-            f"Định dạng '{content_type}' không hỗ trợ. Cho phép: "
+            f"Format '{content_type}' is not supported. Allowed: "
             f"{', '.join(sorted(settings.allowed_image_types_set))}"
         )
     try:
         image = Image.open(io.BytesIO(data))
         image.load()
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
-        raise BadImageError(f"Không giải mã được ảnh: {exc}") from exc
+        raise BadImageError(f"Could not decode image: {exc}") from exc
 
     image = ImageOps.exif_transpose(image)
     if image.mode != "RGB":
@@ -71,11 +72,13 @@ def load_upload_image(
 
 
 def load_corpus_image(path: Path, settings: Settings) -> Image.Image:
-    """Nạp một ảnh có sẵn trong corpus, chuẩn hoá giống ảnh upload.
+    """Load an image already present in the corpus, normalized the same way as an upload.
 
-    Dùng cho nút "Tìm ảnh tương tự": người dùng không upload gì, hệ encode lại
-    ảnh đã có trên đĩa. Encode lại cho ra đúng vector đã nằm trong index (model
-    tất định), nên không cần đường đọc vector ra khỏi Qdrant.
+    Used for the "Find similar images" button: the user doesn't upload
+    anything, the system re-encodes an image that's already on disk.
+    Re-encoding produces the exact same vector already in the index (the
+    model is deterministic), so there's no need for a path that reads the
+    vector back out of Qdrant.
     """
     with Image.open(path) as image:
         image = ImageOps.exif_transpose(image).convert("RGB")

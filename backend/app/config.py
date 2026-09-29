@@ -1,4 +1,4 @@
-"""Cấu hình toàn hệ. Mọi tham số chạy của hệ sống ở đây, không rải trong code."""
+"""System-wide configuration. Every runtime parameter of the system lives here, not scattered in code."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Tham số cấu hình, nạp theo thứ tự: biến môi trường > .env > mặc định."""
+    """Configuration parameters, loaded in this order: environment variables > .env > defaults."""
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
@@ -17,13 +17,14 @@ class Settings(BaseSettings):
     qdrant_mode: Literal["server", "embedded"] = "server"
     qdrant_url: str = "http://localhost:6333"
     qdrant_timeout_s: float = 10.0
-    #: Số kết nối HTTP giữ keep-alive tới Qdrant server. qdrant-client tắt
-    #: keep-alive theo mặc định khi host là localhost/127.0.0.1 (coi đó là tối
-    #: ưu độ trễ), nhưng việc đó khiến mỗi lần gọi .search() mở một kết nối
-    #: TCP mới rồi đóng ngay — chạy hàng chục nghìn query tuần tự (như CLI
-    #: evaluate) dồn ứ cổng ở trạng thái TIME_WAIT và có thể làm cạn cổng
-    #: ephemeral trên Windows (WinError 10048). VectorStore ghi đè bằng
-    #: httpx.Limits dùng giá trị này để giữ và tái sử dụng kết nối.
+    #: Number of HTTP connections to keep alive to the Qdrant server. qdrant-client
+    #: disables keep-alive by default when the host is localhost/127.0.0.1
+    #: (treating that as a latency optimization), but that causes every
+    #: .search() call to open a new TCP connection and close it right away —
+    #: running tens of thousands of sequential queries (like CLI evaluate)
+    #: piles up ports in TIME_WAIT and can exhaust the ephemeral port range on
+    #: Windows (WinError 10048). VectorStore overrides this with httpx.Limits
+    #: using this value to keep and reuse connections.
     qdrant_pool_size: int = 10
 
     data_dir: Path = Path("data")
@@ -105,8 +106,8 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    """Trả về Settings dùng chung, cache lại để không parse .env nhiều lần.
+    """Returns the shared Settings instance, cached so .env isn't parsed repeatedly.
 
-    Test phải gọi ``get_settings.cache_clear()`` sau khi đổi biến môi trường.
+    Tests must call ``get_settings.cache_clear()`` after changing environment variables.
     """
     return Settings()

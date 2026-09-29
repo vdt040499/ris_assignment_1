@@ -1,4 +1,4 @@
-"""Một test đi hết chuỗi trên corpus 3 ảnh: ingest → build → search → eval."""
+"""A single test that runs the whole chain on a 3-image corpus: ingest → build → search → eval."""
 
 import pytest
 from qdrant_client import QdrantClient

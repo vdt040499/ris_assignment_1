@@ -24,10 +24,10 @@ def down_client(settings, service):
             return "down"
 
         def count(self, name):
-            raise VectorStoreDownError("Qdrant không phản hồi")
+            raise VectorStoreDownError("Qdrant is not responding")
 
         def search(self, *args, **kwargs):
-            raise VectorStoreDownError("Qdrant không phản hồi")
+            raise VectorStoreDownError("Qdrant is not responding")
 
     broken = SearchService(settings, DownStore(), service.corpus,
                            encoder_factory=service.encoder_factory)
@@ -174,9 +174,10 @@ def test_upload_above_the_size_limit_is_413(client, settings):
 
 
 def test_image_search_k_zero_is_422_not_503(client):
-    """Finding I5: k<=0 phải là 422 (tham số sai), không phải 503 ("Qdrant
-    down") — trước khi có ``ge=1`` ở Form, k=0 lọt xuống tận Qdrant, bị
-    UnexpectedResponse 4xx, và bị vectordb.py hiểu nhầm thành mất kết nối.
+    """Finding I5: k<=0 must be 422 (bad parameter), not 503 ("Qdrant
+    down") — before ``ge=1`` was added on the Form, k=0 would fall all the
+    way through to Qdrant, trigger an UnexpectedResponse 4xx, and get
+    misinterpreted by vectordb.py as a lost connection.
     """
     response = client.post("/search/image", data={"space": "clip-b32", "k": "0"})
     assert response.status_code == 422

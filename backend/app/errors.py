@@ -1,41 +1,41 @@
-"""Exception miền. Tầng HTTP map các lớp này sang status code ở app/main.py."""
+"""Domain exceptions. The HTTP layer maps these classes to status codes in app/main.py."""
 
 
 class SearchError(Exception):
-    """Gốc của mọi lỗi miền trong hệ."""
+    """Root of every domain error in the system."""
 
 
 class UnknownSpaceError(SearchError):
-    """Tên embedding space không có trong registry → HTTP 404."""
+    """Embedding space name not found in the registry → HTTP 404."""
 
 
 class IndexNotBuiltError(SearchError):
-    """Space hợp lệ nhưng chưa build index → HTTP 409."""
+    """Valid space but the index hasn't been built yet → HTTP 409."""
 
 
 class ModeNotSupportedError(SearchError):
-    """Space không hỗ trợ chiều truy vấn được yêu cầu → HTTP 400."""
+    """Space doesn't support the requested query direction → HTTP 400."""
 
 
 class VectorStoreDownError(SearchError):
-    """Không kết nối được Qdrant → HTTP 503."""
+    """Could not connect to Qdrant → HTTP 503."""
 
 
 class BadImageError(SearchError):
-    """Ảnh upload sai định dạng hoặc không giải mã được → HTTP 400."""
+    """Uploaded image has the wrong format or couldn't be decoded → HTTP 400."""
 
 
 class ImageTooLargeError(SearchError):
-    """Ảnh upload vượt giới hạn byte → HTTP 413."""
+    """Uploaded image exceeds the byte limit → HTTP 413."""
 
 
 class BadRequestError(SearchError):
-    """Request sai logic (vd thiếu cả file và image_id) → HTTP 400."""
+    """Request has invalid logic (e.g. missing both file and image_id) → HTTP 400."""
 
 
 class CorpusError(SearchError):
-    """corpus.jsonl thiếu, rỗng, hoặc sai schema."""
+    """corpus.jsonl is missing, empty, or has an invalid schema."""
 
 
 class ValidationRangeError(SearchError):
-    """Tham số hợp kiểu nhưng ngoài khoảng cho phép (vd k > MAX_TOP_K) → HTTP 422."""
+    """Parameter has the right type but is out of the allowed range (e.g. k > MAX_TOP_K) → HTTP 422."""

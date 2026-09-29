@@ -1,7 +1,7 @@
-"""Hợp đồng request/response của API.
+"""API request/response contracts.
 
-Response của cả chiều text→ảnh và ảnh→ảnh dùng chung một hình dạng, nên
-frontend chỉ cần một component grid duy nhất.
+Responses for both the text→image and image→image directions share the same
+shape, so the frontend only needs a single grid component.
 """
 
 from typing import Literal
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class Filters(BaseModel):
-    """Filter metadata. Nhiều giá trị trong một field là HOẶC, giữa hai field là VÀ."""
+    """Filter metadata. Multiple values within a field are OR'd, between the two fields is AND."""
 
     categories: list[str] = []
     supercategories: list[str] = []
@@ -33,14 +33,14 @@ class TextSearchRequest(BaseModel):
     def _require_text(cls, value: str) -> str:
         trimmed = value.strip()
         if not trimmed:
-            raise ValueError("query không được rỗng")
+            raise ValueError("query must not be empty")
         return trimmed
 
     @field_validator("prompt_template")
     @classmethod
     def _require_placeholder(cls, value: str | None) -> str | None:
         if value is not None and "{}" not in value:
-            raise ValueError("prompt_template phải chứa '{}' để chèn query vào")
+            raise ValueError("prompt_template must contain '{}' to insert the query")
         return value
 
 

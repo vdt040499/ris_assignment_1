@@ -111,10 +111,11 @@ def test_mode_reflects_settings(store):
 
 
 class _RaisingClient:
-    """Fake client thô: mọi phương thức được gọi ném đúng ``exc`` cho trước.
+    """Bare-bones fake client: every method called raises the given ``exc``.
 
-    Dùng để kiểm chứng finding I5 mà không cần một Qdrant thật trả lỗi 4xx/5xx
-    thật: ``UnexpectedResponse`` mang theo ``status_code`` giả lập trực tiếp.
+    Used to verify finding I5 without needing a real Qdrant to actually
+    return 4xx/5xx errors: ``UnexpectedResponse`` carries a directly
+    simulated ``status_code``.
     """
 
     def __init__(self, exc: Exception) -> None:
@@ -150,7 +151,7 @@ def _unexpected(status_code):
     ],
 )
 def test_transport_and_5xx_failures_are_reported_as_qdrant_down(exc):
-    """Lỗi transport thật và 5xx đều là Qdrant "down" — 503 ở tầng HTTP."""
+    """Real transport errors and 5xx are both Qdrant being "down" — a 503 at the HTTP layer."""
     settings = Settings(_env_file=None, qdrant_mode="server")
     store = VectorStore(settings, client=_RaisingClient(exc))
     assert store.health() == "down"
@@ -170,9 +171,10 @@ def test_health_returns_down_string_on_5xx_without_raising():
 
 @pytest.mark.parametrize("status_code", [400, 404, 422])
 def test_4xx_unexpected_response_is_not_mistaken_for_down(status_code):
-    """Finding I5: Qdrant sống và trả lời (4xx = từ chối request), không phải
-    downtime — không được thành ``VectorStoreDownError`` (503 gây hiểu lầm
-    "docker compose up -d qdrant" trong khi Qdrant vẫn chạy bình thường).
+    """Finding I5: Qdrant is alive and responding (4xx = it rejected the
+    request), not downtime — this must not become a ``VectorStoreDownError``
+    (a 503 would misleadingly suggest running "docker compose up -d qdrant"
+    while Qdrant is actually running fine).
     """
     settings = Settings(_env_file=None, qdrant_mode="server")
     exc = _unexpected(status_code)

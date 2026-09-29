@@ -1,7 +1,7 @@
-"""Tầng HTTP. Mỏng có chủ ý: mọi quyết định nghiệp vụ nằm ở SearchService.
+"""HTTP layer. Deliberately thin: all business decisions live in SearchService.
 
-Việc duy nhất tầng này làm ngoài định tuyến là dịch exception miền sang status
-code và chặn path traversal khi serve file ảnh.
+The only thing this layer does besides routing is translate domain exceptions
+into status codes and block path traversal when serving image files.
 """
 
 from contextlib import asynccontextmanager
@@ -77,25 +77,26 @@ EXAMPLE_QUERIES: tuple[dict, ...] = (
 
 
 def _safe_path(directory: Path, file_name: str) -> Path:
-    """Giải đường dẫn file và chắc chắn nó nằm trong ``directory``.
+    """Resolve the file path and make sure it stays within ``directory``.
 
-    Chặn cả ``../`` và symlink trỏ ra ngoài. Mọi trường hợp không hợp lệ đều
-    trả 404 giống như file không tồn tại, để không tiết lộ cấu trúc thư mục.
+    Blocks both ``../`` and symlinks pointing outside. Every invalid case
+    returns 404 just like a missing file, so the directory structure isn't
+    leaked.
     """
     root = directory.resolve()
     candidate = (root / file_name).resolve()
     if not candidate.is_relative_to(root) or not candidate.is_file():
-        raise HTTPException(status_code=404, detail="Không tìm thấy file")
+        raise HTTPException(status_code=404, detail="File not found")
     return candidate
 
 
 def create_app(
     settings: Settings | None = None, service: SearchService | None = None
 ) -> FastAPI:
-    """Dựng app.
+    """Build the app.
 
-    :param service: tiêm sẵn service (test dùng); nếu ``None`` thì app tự dựng
-        từ corpus.jsonl và Qdrant theo cấu hình.
+    :param service: pre-injected service (used by tests); if ``None`` the app
+        builds itself from corpus.jsonl and Qdrant according to the configuration.
     """
     settings = settings or get_settings()
     if service is None:
@@ -161,13 +162,13 @@ def create_app(
         image_id: int | None = Form(default=None),
         file: UploadFile | None = File(default=None),
     ) -> SearchResponse:
-        """Tìm bằng ảnh. Chỉ nhận multipart; phải có đúng một trong file / image_id."""
+        """Search by image. Only accepts multipart; must have exactly one of file / image_id."""
         try:
             filters = (
                 Filters.model_validate_json(filters_json) if filters_json else Filters()
             )
         except ValidationError as exc:
-            raise HTTPException(status_code=422, detail=f"filters_json sai: {exc}") from exc
+            raise HTTPException(status_code=422, detail=f"invalid filters_json: {exc}") from exc
 
         image = None
         if file is not None:
@@ -191,5 +192,5 @@ def create_app(
 
 
 def get_app() -> FastAPI:
-    """Điểm vào cho uvicorn: `uvicorn app.main:get_app --factory`."""
+    """Entry point for uvicorn: `uvicorn app.main:get_app --factory`."""
     return create_app()

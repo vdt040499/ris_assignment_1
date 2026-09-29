@@ -21,12 +21,14 @@ def factory(encoder):
 
 @pytest.fixture(autouse=True)
 def _real_image_files(mini_images_dir):
-    """`build_index._load_image` đọc file thật từ `settings.images_dir`.
+    """`build_index._load_image` reads real files from `settings.images_dir`.
 
-    `corpus` (từ conftest.py) chỉ dựng corpus.jsonl từ annotation, không tự
-    sinh file ảnh. `mini_images_dir` (cũng từ conftest.py) ghi 3 file JPEG
-    thật vào cùng `tmp_path/val2017` mà `settings.images_dir` trỏ tới — autouse
-    fixture này chỉ đảm bảo nó luôn được gọi, không cần mọi test khai báo lại.
+    `corpus` (from conftest.py) only builds corpus.jsonl from the
+    annotations and doesn't generate image files itself. `mini_images_dir`
+    (also from conftest.py) writes 3 real JPEG files into the same
+    `tmp_path/val2017` that `settings.images_dir` points to — this autouse
+    fixture just ensures it always gets called, so tests don't have to
+    redeclare it.
     """
     return mini_images_dir
 
@@ -80,9 +82,10 @@ def test_image_vectors_are_cached_on_disk(settings, corpus, factory, encoder):
     np.testing.assert_allclose(
         first, image_vectors(get_space("clip-b32"), settings, corpus, factory)
     )
-    # Chứng minh lần gọi thứ hai là cache hit chứ không phải một lần encode
-    # nữa tình cờ ra cùng kết quả (FakeEncoder tất định nên hai điều đó không
-    # phân biệt được nếu chỉ so sánh giá trị vector).
+    # Prove the second call is a cache hit rather than another encode call
+    # that coincidentally produces the same result (FakeEncoder is
+    # deterministic, so the two are indistinguishable by comparing vector
+    # values alone).
     assert encoder.image_encode_calls == 1
 
 
@@ -92,12 +95,13 @@ def test_normalized_space_derives_from_the_raw_cache(settings, corpus, factory, 
     assert raw.shape == normalized.shape
     np.testing.assert_allclose(np.linalg.norm(normalized, axis=1),
                                np.ones(len(normalized)), atol=1e-5)
-    # Đây mới là bằng chứng thực sự của cơ chế DERIVED_FROM: nếu nhánh derive
-    # bị xoá, bị đảo ngược, hoặc BUILD_ORDER bị sắp sai thứ tự, clip-b32 sẽ
-    # rơi xuống nhánh encode thật lần thứ hai thay vì tải lại cache của
-    # clip-b32-raw. FakeEncoder tất định nên hai lần encode vẫn ra cùng một
-    # vector và hai assertion ở trên vẫn pass — chỉ đếm số lần gọi
-    # encode_images mới phát hiện được hồi quy này.
+    # This is the real proof of the DERIVED_FROM mechanism: if the derive
+    # branch were removed, reversed, or BUILD_ORDER got sorted in the wrong
+    # order, clip-b32 would fall through to a real second encode instead of
+    # reloading clip-b32-raw's cache. Since FakeEncoder is deterministic, two
+    # encode calls would still produce the same vector and the two
+    # assertions above would still pass — only counting the number of
+    # encode_images calls can catch this regression.
     assert encoder.image_encode_calls == 1
 
 

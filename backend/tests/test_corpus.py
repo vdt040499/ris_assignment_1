@@ -75,4 +75,4 @@ def test_load_bad_line_names_the_line_number(tmp_path):
     path.write_text('{"image_id": 1}\n', encoding="utf-8")
     with pytest.raises(CorpusError) as exc:
         load_corpus(path)
-    assert "dòng 1" in str(exc.value)
+    assert "line 1" in str(exc.value)

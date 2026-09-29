@@ -20,7 +20,7 @@ export default function DetailModal({ item, onClose, onFindSimilar }: Props) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-medium">Ảnh {item.image_id}</h2>
+            <h2 className="text-lg font-medium">Image {item.image_id}</h2>
             <p className="text-sm text-slate-400">
               rank {item.rank} · score {item.score.toFixed(4)}
             </p>

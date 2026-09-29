@@ -1,8 +1,8 @@
-"""Registry các embedding space.
+"""Registry of embedding spaces.
 
-Đây là interface duy nhất giữa phần model và phần hệ thống: API, frontend và
-eval chỉ biết tới SpaceSpec, không biết CLIP hay SigLIP là gì. Thêm một model
-nghĩa là thêm một entry ở đây và không sửa gì khác.
+This is the sole interface between the model layer and the rest of the system:
+the API, frontend, and eval only know about SpaceSpec, not what CLIP or SigLIP
+are. Adding a model means adding an entry here and changing nothing else.
 """
 
 from dataclasses import dataclass
@@ -23,15 +23,15 @@ DISTANCE_DOT = "Dot"
 
 @dataclass(frozen=True)
 class SpaceSpec:
-    """Khai báo một không gian nhúng.
+    """Declaration of an embedding space.
 
-    :param collection_suffix: hậu tố tên collection Qdrant; ``None`` nếu space
-        không lưu trong Qdrant (vd BM25).
-    :param encoder_key: chọn lớp encoder nào dựng space này.
-    :param text_padding: chiến lược padding của tokenizer; SigLIP đòi
-        ``max_length``, CLIP dùng ``longest``.
-    :param builds_index: ``False`` nghĩa là space dùng lại collection ảnh của
-        một space khác và bước build phải bỏ qua nó.
+    :param collection_suffix: Qdrant collection name suffix; ``None`` if the
+        space is not stored in Qdrant (e.g. BM25).
+    :param encoder_key: selects which encoder class builds this space.
+    :param text_padding: the tokenizer's padding strategy; SigLIP requires
+        ``max_length``, CLIP uses ``longest``.
+    :param builds_index: ``False`` means the space reuses another space's
+        image collection, so the build step must skip it.
     """
 
     name: str
@@ -78,7 +78,7 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="hf_dual",
         text_padding="longest",
         builds_index=True,
-        note="đổi kích thước patch so với baseline",
+        note="changes the patch size relative to the baseline",
     ),
     "laion-b32": SpaceSpec(
         name="laion-b32",
@@ -93,7 +93,7 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="hf_dual",
         text_padding="longest",
         builds_index=True,
-        note="cùng kiến trúc baseline, đổi dữ liệu huấn luyện sang LAION-2B",
+        note="same architecture as the baseline, trained on LAION-2B data instead",
     ),
     "siglip-b16": SpaceSpec(
         name="siglip-b16",
@@ -108,7 +108,7 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="hf_dual",
         text_padding="max_length",
         builds_index=True,
-        note="đổi hàm loss sang sigmoid",
+        note="switches the loss function to sigmoid",
     ),
     "mclip-b32": SpaceSpec(
         name="mclip-b32",
@@ -123,7 +123,7 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="st_multilingual",
         text_padding="longest",
         builds_index=False,
-        note="text tower đa ngôn ngữ, dùng lại collection ảnh của clip-b32",
+        note="multilingual text tower, reuses clip-b32's image collection",
     ),
     "clip-b32-raw": SpaceSpec(
         name="clip-b32-raw",
@@ -138,7 +138,7 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="hf_dual",
         text_padding="longest",
         builds_index=True,
-        note="nhóm đối chứng cho ablation normalize",
+        note="control group for the normalization ablation",
     ),
     "resnet50": SpaceSpec(
         name="resnet50",
@@ -153,7 +153,7 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="resnet",
         text_padding="longest",
         builds_index=True,
-        note="baseline không multimodal",
+        note="non-multimodal baseline",
     ),
     "bm25-cap": SpaceSpec(
         name="bm25-cap",
@@ -168,22 +168,22 @@ SPACES: dict[str, SpaceSpec] = {
         encoder_key="bm25",
         text_padding="longest",
         builds_index=True,
-        note="baseline không ngữ nghĩa, khớp từ khoá trên caption",
+        note="non-semantic baseline, keyword matching on captions",
     ),
 }
 
 
 def get_space(name: str) -> SpaceSpec:
-    """Tra một space theo tên.
+    """Look up a space by name.
 
-    :raises UnknownSpaceError: nếu tên không có trong registry, kèm danh sách
-        tên hợp lệ để người gọi sửa được ngay.
+    :raises UnknownSpaceError: if the name is not in the registry, including
+        the list of valid names so the caller can fix it right away.
     """
     try:
         return SPACES[name]
     except KeyError as exc:
         raise UnknownSpaceError(
-            f"Space '{name}' không tồn tại. Hợp lệ: {', '.join(sorted(SPACES))}"
+            f"Space '{name}' does not exist. Valid: {', '.join(sorted(SPACES))}"
         ) from exc
 
 
@@ -192,15 +192,15 @@ def list_space_names() -> list[str]:
 
 
 def collection_name(space: SpaceSpec, settings: Settings, target: str = "image") -> str:
-    """Tên collection Qdrant của một space.
+    """Qdrant collection name for a space.
 
-    :param target: ``"image"`` cho collection ảnh, ``"caption"`` cho collection
-        caption (dùng ở chiều ảnh→text).
-    :raises ValueError: nếu space không lưu trong Qdrant, hoặc target không hợp lệ.
+    :param target: ``"image"`` for the image collection, ``"caption"`` for the
+        caption collection (used for the image→text direction).
+    :raises ValueError: if the space is not stored in Qdrant, or target is invalid.
     """
     if space.backend != BACKEND_QDRANT or space.collection_suffix is None:
-        raise ValueError(f"Space '{space.name}' không dùng Qdrant")
+        raise ValueError(f"Space '{space.name}' does not use Qdrant")
     if target not in ("image", "caption"):
-        raise ValueError(f"target không hợp lệ: {target}")
+        raise ValueError(f"invalid target: {target}")
     suffix = space.collection_suffix if target == "image" else f"cap_{space.collection_suffix}"
     return f"{settings.collection_prefix}_{suffix}"
